@@ -1,0 +1,4 @@
+project_id = "xrmkhmpgkkyeiwmgmyxw"
+
+[functions.generate-starter-pack]
+verify_jwt = false

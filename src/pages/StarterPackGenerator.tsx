@@ -4,34 +4,71 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Check, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const StarterPackGenerator = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState({
+    textPrompts: 0,
+    captions: 0,
+    imageStyles: 0,
+    videoScripts: 0,
+    personaAngles: 0
+  });
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleGenerate = async () => {
     setIsGenerating(true);
     
-    // Simulate generation process
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    setIsGenerating(false);
-    setGenerated(true);
-    
-    toast({
-      title: "Starter Pack Generated!",
-      description: "Your content has been saved to the Creator Library.",
-    });
-  };
+    try {
+      // Get creator profile from localStorage (from onboarding)
+      const creatorProfile = {
+        bio: localStorage.getItem('creator_bio') || 'Content creator passionate about storytelling',
+        persona: localStorage.getItem('creator_persona') || 'Professional and authentic',
+        socialLinks: JSON.parse(localStorage.getItem('creator_social_links') || '[]'),
+      };
 
-  const generatedContent = {
-    textPrompts: 10,
-    captions: 10,
-    imageStyles: 5,
-    videoScripts: 5,
-    personaAngles: 3
+      const { data, error } = await supabase.functions.invoke('generate-starter-pack', {
+        body: { creatorProfile }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Store generated content in localStorage for the library
+      localStorage.setItem('generated_starter_pack', JSON.stringify(data));
+
+      setGeneratedContent({
+        textPrompts: data.textPrompts?.length || 0,
+        captions: data.captions?.length || 0,
+        imageStyles: data.imageStyles?.length || 0,
+        videoScripts: data.videoScripts?.length || 0,
+        personaAngles: data.personaAngles?.length || 0,
+      });
+      
+      setGenerated(true);
+      
+      toast({
+        title: "Starter Pack Generated!",
+        description: "Your content has been saved to the Creator Library.",
+      });
+    } catch (error) {
+      console.error('Error generating starter pack:', error);
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate starter pack. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
