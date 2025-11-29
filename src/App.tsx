@@ -11,8 +11,6 @@ import Onboarding from "./pages/Onboarding";
 import SampleSelector from "./pages/SampleSelector";
 import StarterPackGenerator from "./pages/StarterPackGenerator";
 import CreatorLibrary from "./pages/CreatorLibrary";
-import VoiceTool from "./pages/VoiceTool";
-import VoiceGenerator from "./pages/VoiceGenerator";
 import StaffDashboard from "./pages/StaffDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -34,8 +32,6 @@ const App = () => (
             <Route path="/samples" element={<SampleSelector />} />
             <Route path="/generator" element={<StarterPackGenerator />} />
             <Route path="/library" element={<CreatorLibrary />} />
-            <Route path="/voice" element={<VoiceTool />} />
-            <Route path="/voice-generator" element={<VoiceGenerator />} />
             <Route path="/staff" element={<StaffDashboard />} />
             <Route path="/admin" element={<AdminDashboard />} />
           </Route>

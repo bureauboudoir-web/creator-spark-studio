@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, FileText, Image, Video, Mic, Library, Plus } from "lucide-react";
+import { Sparkles, FileText, Image, Video, Library, Plus } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -20,13 +20,6 @@ const Dashboard = () => {
       icon: Library,
       action: () => navigate("/library"),
       gradient: "from-accent to-accent/80"
-    },
-    {
-      title: "Voice Samples",
-      description: "Record and manage voice templates",
-      icon: Mic,
-      action: () => navigate("/voice"),
-      gradient: "from-primary to-accent"
     },
     {
       title: "Templates",
@@ -74,14 +67,6 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-accent">12</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card/50 backdrop-blur border-border/50 hover:shadow-accent transition-all duration-300">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Voice Samples</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-accent">8</div>
             </CardContent>
           </Card>
         </div>
