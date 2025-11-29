@@ -23,7 +23,6 @@ interface Creator {
 const StaffDashboard = () => {
   const [creators, setCreators] = useState<Creator[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const { setSelectedCreatorId } = useCreatorContext();
 
   useEffect(() => {
     fetchCreators();
@@ -120,8 +119,7 @@ const StaffDashboard = () => {
             {filteredCreators.map((creator) => (
               <div
                 key={creator.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer"
-                onClick={() => setSelectedCreatorId(creator.id)}
+                className="flex items-center justify-between p-4 border rounded-lg"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
