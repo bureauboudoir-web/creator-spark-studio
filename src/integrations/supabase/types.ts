@@ -112,6 +112,30 @@ export type Database = {
         }
         Relationships: []
       }
+      fastcast_content_settings: {
+        Row: {
+          bb_api_key: string | null
+          bb_api_url: string | null
+          created_at: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          bb_api_key?: string | null
+          bb_api_url?: string | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          bb_api_key?: string | null
+          bb_api_url?: string | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

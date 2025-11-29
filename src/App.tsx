@@ -13,6 +13,7 @@ import StarterPackGenerator from "./pages/StarterPackGenerator";
 import CreatorLibrary from "./pages/CreatorLibrary";
 import StaffDashboard from "./pages/StaffDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import ApiSettings from "./pages/ApiSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/library" element={<CreatorLibrary />} />
             <Route path="/staff" element={<StaffDashboard />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/api-settings" element={<ApiSettings />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

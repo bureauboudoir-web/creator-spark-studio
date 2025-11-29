@@ -2,3 +2,6 @@ project_id = "xrmkhmpgkkyeiwmgmyxw"
 
 [functions.generate-starter-pack]
 verify_jwt = false
+
+[functions.manage-api-settings]
+verify_jwt = false
