@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/auth/RoleGuard";
-import { ArrowLeft, User, RefreshCw, FileJson, Sparkles, Loader2, AlertCircle, Package, CheckCircle, Edit, RotateCcw, Check, X } from "lucide-react";
+import { ArrowLeft, User, RefreshCw, FileJson, Sparkles, Loader2, AlertCircle, Package, CheckCircle, Edit, RotateCcw, Check, X, Save, Send } from "lucide-react";
 
 interface CreatorData {
   id: string;
@@ -169,10 +169,37 @@ const CreatorDetail = () => {
   const [generating, setGenerating] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editedPack, setEditedPack] = useState<StarterPackData | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [sendingToBB, setSendingToBB] = useState(false);
+  const [savedPackId, setSavedPackId] = useState<string | null>(null);
+  const [bbConfigured, setBbConfigured] = useState<boolean | null>(null);
+  const [packStatus, setPackStatus] = useState<'draft' | 'final' | 'sent' | 'approved'>('draft');
 
   useEffect(() => {
     loadCreatorData();
+    checkBBConfig();
   }, [id]);
+
+  // Check if BB API is configured
+  const checkBBConfig = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-api-settings', {
+        method: 'GET'
+      });
+
+      if (error) {
+        console.error('Error checking BB config:', error);
+        setBbConfigured(false);
+        return;
+      }
+
+      const hasConfig = data?.data?.bb_api_url && data?.data?.bb_api_key;
+      setBbConfigured(hasConfig);
+    } catch (error) {
+      console.error('Error checking BB config:', error);
+      setBbConfigured(false);
+    }
+  };
 
   const loadCreatorData = async () => {
     try {
@@ -247,14 +274,111 @@ const CreatorDetail = () => {
     await generateStarterPack(creator?.id || '');
   };
 
-  const handleApprove = () => {
-    const packToApprove = editMode ? editedPack : starterPack;
-    console.log('Approving starter pack:', packToApprove);
-    toast({
-      title: "Success!",
-      description: "Starter pack approved and ready to send to BB (placeholder).",
-      variant: "default",
-    });
+  const handleSave = async () => {
+    if (!creator?.id) {
+      toast({
+        title: "Error",
+        description: "Creator ID not found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const packData = editMode ? editedPack : starterPack;
+      const { data, error } = await supabase.functions.invoke('save-starter-pack', {
+        body: {
+          creator_id: creator.id,
+          title: `${creator.full_name}'s Starter Pack`,
+          data: packData,
+          send_to_bb: false
+        }
+      });
+      
+      if (error || !data.success) {
+        throw new Error(data?.error || 'Failed to save');
+      }
+      
+      setSavedPackId(data.starterPackId);
+      setPackStatus('draft');
+      toast({
+        title: "Starter Pack Saved",
+        description: "The starter pack has been saved locally.",
+      });
+    } catch (error: any) {
+      console.error('Save error:', error);
+      toast({
+        title: "Save Failed",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSendToBB = async () => {
+    if (!creator?.id) {
+      toast({
+        title: "Error",
+        description: "Creator ID not found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!starterPack) {
+      toast({
+        title: "Nothing to Send",
+        description: "Please generate or save a starter pack first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSendingToBB(true);
+    try {
+      const packData = editMode ? editedPack : starterPack;
+      const { data, error } = await supabase.functions.invoke('save-starter-pack', {
+        body: {
+          creator_id: creator.id,
+          title: `${creator.full_name}'s Starter Pack`,
+          data: packData,
+          send_to_bb: true
+        }
+      });
+      
+      if (error || !data.success) {
+        throw new Error(data?.error || 'Failed to send');
+      }
+      
+      setSavedPackId(data.starterPackId);
+      
+      if (data.bb_sync) {
+        setPackStatus('sent');
+        toast({
+          title: "Sent to BB",
+          description: "Starter pack has been synced to BB successfully.",
+        });
+      } else {
+        // BB not configured fallback
+        setPackStatus('draft');
+        toast({
+          title: "Saved Locally Only",
+          description: data.message || "BB API not configured. Saved locally.",
+        });
+      }
+    } catch (error: any) {
+      console.error('Sync error:', error);
+      toast({
+        title: "Sync Failed",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingToBB(false);
+    }
   };
 
   const handleEditToggle = () => {
@@ -352,6 +476,20 @@ const CreatorDetail = () => {
                   <AlertCircle className="w-5 h-5 text-amber-500" />
                   <p className="text-sm text-amber-700 dark:text-amber-400">
                     <strong>Using mock creator data</strong> - BB connection unavailable.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* BB API Warning */}
+          {bbConfigured === false && (
+            <Card className="bg-amber-500/10 border-amber-500/20">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-500" />
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
+                    <strong>BB API not configured</strong> - Starter packs will be saved locally only. Configure BB API in API Settings to enable sync.
                   </p>
                 </div>
               </CardContent>
@@ -715,30 +853,56 @@ const CreatorDetail = () => {
 
                   {/* Section C - Staff Review Actions */}
                   <Separator />
-                  <div className="flex flex-wrap gap-3">
-                    <Button
-                      onClick={handleApprove}
-                      className="flex-1 bg-green-600 hover:bg-green-700 gap-2"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      Approve and Send to BB
-                    </Button>
-                    <Button
-                      onClick={handleRegenerate}
-                      variant="outline"
-                      className="gap-2"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                      Regenerate
-                    </Button>
-                    <Button
-                      onClick={handleEditToggle}
-                      variant="outline"
-                      className="gap-2"
-                    >
-                      <Edit className="w-4 h-4" />
-                      {editMode ? 'Done Editing' : 'Edit Before Approving'}
-                    </Button>
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-3">
+                      {/* Save button */}
+                      <Button
+                        onClick={handleSave}
+                        disabled={saving || !starterPack}
+                        className="flex-1 gap-2"
+                        variant="secondary"
+                      >
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        Save Draft
+                      </Button>
+                      
+                      {/* Send to BB button */}
+                      <Button
+                        onClick={handleSendToBB}
+                        disabled={sendingToBB || !starterPack}
+                        className="flex-1 bg-green-600 hover:bg-green-700 gap-2"
+                      >
+                        {sendingToBB ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        Send to BB
+                      </Button>
+                      
+                      {/* Regenerate button */}
+                      <Button
+                        onClick={handleRegenerate}
+                        variant="outline"
+                        className="gap-2"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Regenerate
+                      </Button>
+                      
+                      {/* Edit button */}
+                      <Button
+                        onClick={handleEditToggle}
+                        variant="outline"
+                        className="gap-2"
+                      >
+                        <Edit className="w-4 h-4" />
+                        {editMode ? 'Done Editing' : 'Edit'}
+                      </Button>
+                    </div>
+
+                    {/* Status indicator */}
+                    {packStatus !== 'draft' && (
+                      <Badge variant={packStatus === 'sent' ? 'default' : 'secondary'}>
+                        Status: {packStatus}
+                      </Badge>
+                    )}
                   </div>
                 </div>
               )}
