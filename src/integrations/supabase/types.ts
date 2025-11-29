@@ -19,12 +19,14 @@ export type Database = {
           approval_status: string | null
           approved_at: string | null
           approved_by: string | null
+          category: string | null
           content: string
           created_at: string | null
           creator_id: string
           folder: string
           id: string
           metadata: Json | null
+          short_description: string | null
           title: string
           type: string
           updated_at: string | null
@@ -33,12 +35,14 @@ export type Database = {
           approval_status?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          category?: string | null
           content: string
           created_at?: string | null
           creator_id: string
           folder: string
           id?: string
           metadata?: Json | null
+          short_description?: string | null
           title: string
           type: string
           updated_at?: string | null
@@ -47,12 +51,14 @@ export type Database = {
           approval_status?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          category?: string | null
           content?: string
           created_at?: string | null
           creator_id?: string
           folder?: string
           id?: string
           metadata?: Json | null
+          short_description?: string | null
           title?: string
           type?: string
           updated_at?: string | null

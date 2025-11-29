@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Check, X, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRole } from '@/hooks/useRole';
+import { CONTENT_CATEGORIES } from '@/lib/content-categories';
 
 interface ContentCardProps {
   id: string;
@@ -13,15 +15,19 @@ interface ContentCardProps {
   content: string;
   type: string;
   approvalStatus: string;
+  shortDescription?: string;
   onUpdate?: () => void;
   onDelete?: () => void;
 }
 
-export const ContentCard = ({ id, title, content, type, approvalStatus, onUpdate, onDelete }: ContentCardProps) => {
+export const ContentCard = ({ id, title, content, type, approvalStatus, shortDescription, onUpdate, onDelete }: ContentCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
   const { toast } = useToast();
   const { isStaff } = useRole();
+  
+  const categoryData = CONTENT_CATEGORIES.find((c) => c.id === type);
+  const CategoryIcon = categoryData?.icon;
 
   const handleSave = async () => {
     const { error } = await supabase
@@ -74,16 +80,29 @@ export const ContentCard = ({ id, title, content, type, approvalStatus, onUpdate
     <Card>
       <CardHeader>
         <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-lg">{title}</CardTitle>
-            <CardDescription className="capitalize">{type.replace('_', ' ')}</CardDescription>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              {CategoryIcon && categoryData && (
+                <div className={`${categoryData.color} p-1 rounded`}>
+                  <CategoryIcon className="w-3 h-3 text-white" />
+                </div>
+              )}
+              <CardTitle className="text-lg">{title}</CardTitle>
+            </div>
+            {shortDescription && (
+              <CardDescription className="text-sm">{shortDescription}</CardDescription>
+            )}
           </div>
           <div className="flex items-center gap-1">
             {approvalStatus === 'pending' && (
-              <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded">Pending</span>
+              <Badge variant="outline" className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50">
+                Pending
+              </Badge>
             )}
             {approvalStatus === 'approved' && (
-              <span className="text-xs bg-green-500/20 text-green-500 px-2 py-1 rounded">Approved</span>
+              <Badge variant="outline" className="bg-green-500/20 text-green-500 border-green-500/50">
+                Approved
+              </Badge>
             )}
           </div>
         </div>
