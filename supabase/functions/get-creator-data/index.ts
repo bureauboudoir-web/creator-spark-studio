@@ -31,12 +31,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabaseClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    // Extract JWT token
+    const token = authHeader.replace('Bearer ', '');
 
-    // Verify user is authenticated and is staff
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    // Create service role client and verify the JWT
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: { user }, error: authError } = await serviceClient.auth.getUser(token);
     
     if (authError || !user) {
       console.error('Auth error:', authError);
@@ -46,8 +46,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check if user is staff
-    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+    // Check if user is staff (serviceClient already created above)
     const { data: roleData, error: roleError } = await serviceClient
       .from('user_roles')
       .select('role')
