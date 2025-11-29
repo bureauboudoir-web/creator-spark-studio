@@ -14,16 +14,265 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      content_items: {
+        Row: {
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
+          content: string
+          created_at: string | null
+          creator_id: string
+          folder: string
+          id: string
+          metadata: Json | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          content: string
+          created_at?: string | null
+          creator_id: string
+          folder: string
+          id?: string
+          metadata?: Json | null
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          content?: string
+          created_at?: string | null
+          creator_id?: string
+          folder?: string
+          id?: string
+          metadata?: Json | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_items_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creators: {
+        Row: {
+          created_at: string | null
+          id: string
+          id_upload_status: string | null
+          id_upload_url: string | null
+          instagram: string | null
+          persona_description: string | null
+          sample_images: string[] | null
+          tiktok: string | null
+          twitter: string | null
+          updated_at: string | null
+          user_id: string
+          youtube: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          id_upload_status?: string | null
+          id_upload_url?: string | null
+          instagram?: string | null
+          persona_description?: string | null
+          sample_images?: string[] | null
+          tiktok?: string | null
+          twitter?: string | null
+          updated_at?: string | null
+          user_id: string
+          youtube?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          id_upload_status?: string | null
+          id_upload_url?: string | null
+          instagram?: string | null
+          persona_description?: string | null
+          sample_images?: string[] | null
+          tiktok?: string | null
+          twitter?: string | null
+          updated_at?: string | null
+          user_id?: string
+          youtube?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          language: string | null
+          onboarding_completed: boolean | null
+          onboarding_step: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          language?: string | null
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          language?: string | null
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      starter_packs: {
+        Row: {
+          created_at: string | null
+          creator_id: string
+          generated_data: Json
+          id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id: string
+          generated_data: Json
+          id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string
+          generated_data?: Json
+          id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "starter_packs_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      voice_notes: {
+        Row: {
+          audio_url: string | null
+          background_sound: string | null
+          created_at: string | null
+          creator_id: string
+          generated_by: string
+          id: string
+          message: string
+          speed: number | null
+          tone: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          background_sound?: string | null
+          created_at?: string | null
+          creator_id: string
+          generated_by: string
+          id?: string
+          message: string
+          speed?: number | null
+          tone?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          background_sound?: string | null
+          created_at?: string | null
+          creator_id?: string
+          generated_by?: string
+          id?: string
+          message?: string
+          speed?: number | null
+          tone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_notes_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "creator"
+        | "manager"
+        | "admin"
+        | "chat_team"
+        | "studio_team"
+        | "marketing_team"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +399,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "creator",
+        "manager",
+        "admin",
+        "chat_team",
+        "studio_team",
+        "marketing_team",
+      ],
+    },
   },
 } as const
