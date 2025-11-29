@@ -1,17 +1,40 @@
 import { useState, useEffect } from 'react';
+import { BBCreator } from '@/types/bb-creator';
 
-export const useCreatorContext = () => {
-  const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(() => {
-    return localStorage.getItem('bb_selected_creator');
+interface CreatorContextValue {
+  selectedCreatorId: string | null;
+  selectedCreator: BBCreator | null;
+  setSelectedCreator: (creator: BBCreator | null) => void;
+  apiError: string | null;
+  setApiError: (error: string | null) => void;
+}
+
+export const useCreatorContext = (): CreatorContextValue => {
+  const [selectedCreator, setSelectedCreatorState] = useState<BBCreator | null>(() => {
+    const stored = localStorage.getItem('bb_selected_creator');
+    return stored ? JSON.parse(stored) : null;
   });
 
+  const [apiError, setApiError] = useState<string | null>(null);
+
   useEffect(() => {
-    if (selectedCreatorId) {
-      localStorage.setItem('bb_selected_creator', selectedCreatorId);
+    if (selectedCreator) {
+      localStorage.setItem('bb_selected_creator', JSON.stringify(selectedCreator));
     } else {
       localStorage.removeItem('bb_selected_creator');
     }
-  }, [selectedCreatorId]);
+  }, [selectedCreator]);
 
-  return { selectedCreatorId, setSelectedCreatorId };
+  const setSelectedCreator = (creator: BBCreator | null) => {
+    setSelectedCreatorState(creator);
+    setApiError(null);
+  };
+
+  return {
+    selectedCreatorId: selectedCreator?.creator_id || null,
+    selectedCreator,
+    setSelectedCreator,
+    apiError,
+    setApiError,
+  };
 };
