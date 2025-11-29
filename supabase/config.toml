@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.get-creator-data]
 verify_jwt = false
+
+[functions.save-starter-pack]
+verify_jwt = false
