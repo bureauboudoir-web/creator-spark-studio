@@ -22,6 +22,7 @@ export const Navigation = () => {
     { to: "/generator", label: "Generator", icon: Sparkles, roles: null },
     { to: "/staff", label: "Staff", icon: Users, staffOnly: true },
     { to: "/admin", label: "Admin", icon: Settings, staffOnly: true },
+    { to: "/creators", label: "Creators", icon: Users, staffOnly: true },
     { to: "/api-settings", label: "API Settings", icon: Key, roles: ['admin'] },
   ];
 

@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.manage-api-settings]
 verify_jwt = false
+
+[functions.get-creators]
+verify_jwt = false
