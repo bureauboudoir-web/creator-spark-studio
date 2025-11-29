@@ -6,10 +6,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/auth/RoleGuard";
-import { ArrowLeft, User, RefreshCw, FileJson, Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, User, RefreshCw, FileJson, Sparkles, Loader2, AlertCircle, Package, CheckCircle, Edit, RotateCcw, Check, X } from "lucide-react";
 
 interface CreatorData {
   id: string;
@@ -37,6 +39,17 @@ interface CreatorData {
     vibe?: string;
     sample_image_urls?: string[];
   };
+}
+
+interface StarterPackData {
+  profile_bio: string;
+  content_themes: string[];
+  weekly_content_plan: { day: string; content: string }[];
+  ppv_ideas: string[];
+  hook_ideas: string[];
+  do_rules: string[];
+  dont_rules: string[];
+  text_scripts: { name: string; script: string }[];
 }
 
 const MOCK_CREATOR_DATA: CreatorData = {
@@ -73,6 +86,74 @@ const MOCK_CREATOR_DATA: CreatorData = {
   },
 };
 
+const MOCK_STARTER_PACK: StarterPackData = {
+  profile_bio: "Wellness advocate sharing daily mindfulness practices and self-care rituals. Join me on a journey to balanced living 🌿✨",
+  content_themes: [
+    "Morning Rituals",
+    "Mindful Moments",
+    "Self-Care Sunday",
+    "Wellness Wednesday",
+    "Balance & Growth",
+    "Personal Reflection"
+  ],
+  weekly_content_plan: [
+    { day: "Monday", content: "Morning meditation routine + coffee ritual" },
+    { day: "Tuesday", content: "Wellness tip of the week (e.g., breathing exercises)" },
+    { day: "Wednesday", content: "Behind-the-scenes of my self-care practice" },
+    { day: "Thursday", content: "Q&A about mindfulness and wellness journey" },
+    { day: "Friday", content: "Weekend wellness prep & planning" },
+    { day: "Saturday", content: "Personal story or reflection from the week" },
+    { day: "Sunday", content: "Self-care Sunday routine showcase" }
+  ],
+  ppv_ideas: [
+    "Exclusive guided meditation audio series (20-30 min sessions)",
+    "Private wellness journal prompts & reflection guide",
+    "Morning routine video tutorial with all my favorite practices",
+    "One-on-one wellness chat session for personalized tips",
+    "Monthly self-care bundle with curated practices & resources"
+  ],
+  hook_ideas: [
+    "Want to know the one habit that changed my mornings?",
+    "Here's what nobody tells you about starting a mindfulness practice...",
+    "I tried this wellness routine for 30 days and here's what happened",
+    "The self-care practice everyone needs but nobody talks about",
+    "This is your sign to prioritize yourself today 💫",
+    "POV: You finally figure out what balance actually means"
+  ],
+  do_rules: [
+    "Share authentic personal experiences and growth moments",
+    "Provide actionable wellness tips that followers can implement today",
+    "Respond to comments with encouragement and support",
+    "Disclose all partnerships and sponsored content clearly",
+    "Use calming, positive language that uplifts the community"
+  ],
+  dont_rules: [
+    "Never give medical advice or diagnose health conditions",
+    "Don't endorse products without trying them personally",
+    "Avoid sharing others' private information or stories",
+    "Don't create content when feeling inauthentic or pressured",
+    "Never claim that wellness practices work the same for everyone"
+  ],
+  text_scripts: [
+    {
+      name: "Welcome Message",
+      script: "Hi beautiful soul! 🌸 I'm so glad you're here. This space is all about finding balance, practicing self-care, and growing together. Feel free to reach out anytime - I love connecting with this amazing community! ✨"
+    },
+    {
+      name: "PPV Promo (Meditation Series)",
+      script: "Something special just for you 💫 I've created an exclusive guided meditation series to help you find calm in the chaos. 20-minute sessions perfect for morning or evening practice. Unlock it now and let's breathe together 🧘‍♀️"
+    },
+    {
+      name: "Engagement Prompt",
+      script: "Quick question for you lovely humans ☀️ What's one self-care practice you're trying to be more consistent with? Drop it below - I'd love to hear! Maybe we can support each other on this journey 🤝💕"
+    },
+    {
+      name: "Re-engagement Message",
+      script: "Hey, I've missed you! 🌟 Just wanted to check in and see how you're doing. Remember, it's okay to take breaks and prioritize yourself. What's one thing you're grateful for today? 💛"
+    }
+  ]
+};
+
 const CreatorDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -82,6 +163,12 @@ const CreatorDetail = () => {
   const [creator, setCreator] = useState<CreatorData | null>(null);
   const [rawJson, setRawJson] = useState<any>(null);
   const [usingMock, setUsingMock] = useState(false);
+  
+  // Starter Pack states
+  const [starterPack, setStarterPack] = useState<StarterPackData | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editedPack, setEditedPack] = useState<StarterPackData | null>(null);
 
   useEffect(() => {
     loadCreatorData();
@@ -138,6 +225,49 @@ const CreatorDetail = () => {
       title: "Refreshed",
       description: "Creator data has been refreshed from BB.",
     });
+  };
+
+  // Starter Pack handlers
+  const generateStarterPack = async (creatorId: string) => {
+    setGenerating(true);
+    // Simulate AI generation with a delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setStarterPack(MOCK_STARTER_PACK);
+    setEditedPack(MOCK_STARTER_PACK);
+    setGenerating(false);
+    toast({
+      title: "Starter Pack Generated",
+      description: "Review the content below before approving.",
+    });
+  };
+
+  const handleRegenerate = async () => {
+    setStarterPack(null);
+    setEditedPack(null);
+    await generateStarterPack(creator?.id || '');
+  };
+
+  const handleApprove = () => {
+    const packToApprove = editMode ? editedPack : starterPack;
+    console.log('Approving starter pack:', packToApprove);
+    toast({
+      title: "Success!",
+      description: "Starter pack approved and ready to send to BB (placeholder).",
+      variant: "default",
+    });
+  };
+
+  const handleEditToggle = () => {
+    setEditMode(!editMode);
+    if (!editMode) {
+      setEditedPack(starterPack);
+    }
+  };
+
+  const updateEditedField = (field: keyof StarterPackData, value: any) => {
+    if (editedPack) {
+      setEditedPack({ ...editedPack, [field]: value });
+    }
   };
 
   if (loading) {
@@ -403,22 +533,215 @@ const CreatorDetail = () => {
             </CardContent>
           </Card>
 
-          {/* Section 5 - Creator Actions */}
+          {/* Section 5 - Starter Pack Generator */}
           <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
             <CardHeader>
-              <CardTitle>Creator Actions</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Starter Pack Generator
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <Button
-                className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity gap-2"
-                size="lg"
-              >
-                <Sparkles className="w-5 h-5" />
-                Generate Starter Pack
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                This feature will be implemented in a future step
-              </p>
+            <CardContent className="space-y-6">
+              {/* Section A - Generation Trigger */}
+              {!starterPack && (
+                <div className="text-center space-y-4">
+                  <Button
+                    onClick={() => generateStarterPack(creator.id)}
+                    disabled={generating}
+                    className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity gap-2"
+                    size="lg"
+                  >
+                    {generating ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Generating Starter Pack...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        Generate Starter Pack
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    Generate a personalized starter pack based on {creator.full_name}'s persona and style preferences
+                  </p>
+                </div>
+              )}
+
+              {/* Section B - Starter Pack Preview */}
+              {starterPack && (
+                <div className="space-y-6">
+                  {/* Profile Bio */}
+                  <div className="space-y-2">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      Suggested Profile Bio
+                    </h3>
+                    {editMode ? (
+                      <Textarea
+                        value={editedPack?.profile_bio || ''}
+                        onChange={(e) => updateEditedField('profile_bio', e.target.value)}
+                        className="min-h-[80px]"
+                      />
+                    ) : (
+                      <p className="text-sm bg-muted/50 p-4 rounded-lg">{starterPack.profile_bio}</p>
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  {/* Content Themes */}
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">Content Themes</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {starterPack.content_themes.map((theme, idx) => (
+                        <Badge key={idx} variant="secondary" className="text-sm">
+                          {theme}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Weekly Content Plan */}
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">Weekly Content Plan</h3>
+                    <div className="space-y-2">
+                      {starterPack.weekly_content_plan.map((item, idx) => (
+                        <div key={idx} className="flex gap-3 p-3 bg-muted/30 rounded-lg">
+                          <span className="font-medium text-primary min-w-[100px]">{item.day}</span>
+                          <span className="text-sm">{item.content}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* PPV Ideas */}
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">PPV Ideas</h3>
+                    <ul className="space-y-2">
+                      {starterPack.ppv_ideas.map((idea, idx) => (
+                        <li key={idx} className="flex gap-2 text-sm">
+                          <span className="text-primary">•</span>
+                          <span>{idea}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <Separator />
+
+                  {/* Hook Ideas */}
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">Hook Ideas</h3>
+                    <div className="space-y-2">
+                      {starterPack.hook_ideas.map((hook, idx) => (
+                        <div key={idx} className="p-3 bg-accent/10 border-l-4 border-accent rounded-r-lg">
+                          <p className="text-sm italic">"{hook}"</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Do/Don't Rules */}
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">Content Guidelines</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {/* Do Rules */}
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-green-600 dark:text-green-400 flex items-center gap-2">
+                          <Check className="w-4 h-4" />
+                          Do's
+                        </h4>
+                        <ul className="space-y-2">
+                          {starterPack.do_rules.map((rule, idx) => (
+                            <li key={idx} className="flex gap-2 text-sm">
+                              <Check className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                              <span>{rule}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      {/* Don't Rules */}
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-red-600 dark:text-red-400 flex items-center gap-2">
+                          <X className="w-4 h-4" />
+                          Don'ts
+                        </h4>
+                        <ul className="space-y-2">
+                          {starterPack.dont_rules.map((rule, idx) => (
+                            <li key={idx} className="flex gap-2 text-sm">
+                              <X className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                              <span>{rule}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Text Scripts */}
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">Text Scripts</h3>
+                    <div className="space-y-3">
+                      {starterPack.text_scripts.map((script, idx) => (
+                        <div key={idx} className="space-y-1 p-4 bg-muted/30 rounded-lg">
+                          <h4 className="text-sm font-medium text-primary">{script.name}</h4>
+                          {editMode ? (
+                            <Textarea
+                              value={editedPack?.text_scripts[idx]?.script || ''}
+                              onChange={(e) => {
+                                const newScripts = [...(editedPack?.text_scripts || [])];
+                                newScripts[idx] = { ...newScripts[idx], script: e.target.value };
+                                updateEditedField('text_scripts', newScripts);
+                              }}
+                              className="min-h-[60px] text-sm"
+                            />
+                          ) : (
+                            <p className="text-sm text-muted-foreground">{script.script}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Section C - Staff Review Actions */}
+                  <Separator />
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      onClick={handleApprove}
+                      className="flex-1 bg-green-600 hover:bg-green-700 gap-2"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Approve and Send to BB
+                    </Button>
+                    <Button
+                      onClick={handleRegenerate}
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Regenerate
+                    </Button>
+                    <Button
+                      onClick={handleEditToggle}
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      <Edit className="w-4 h-4" />
+                      {editMode ? 'Done Editing' : 'Edit Before Approving'}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
