@@ -1,10 +1,19 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Sparkles, Zap, Lock, TrendingUp } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const features = [
     {
@@ -49,17 +58,17 @@ const Index = () => {
               <Button 
                 size="lg"
                 className="bg-gradient-primary shadow-glow text-lg px-8 py-6"
-                onClick={() => navigate("/onboarding")}
+                onClick={() => navigate("/auth")}
               >
-                Get Started
+                Sign In
               </Button>
               <Button 
                 size="lg"
                 variant="outline"
                 className="border-border text-lg px-8 py-6"
-                onClick={() => navigate("/dashboard")}
+                onClick={() => navigate("/auth")}
               >
-                View Dashboard
+                Sign Up
               </Button>
             </div>
           </div>
@@ -98,9 +107,9 @@ const Index = () => {
           <Button 
             size="lg"
             className="bg-gradient-primary shadow-glow text-lg px-8 py-6"
-            onClick={() => navigate("/onboarding")}
+            onClick={() => navigate("/auth")}
           >
-            Begin Onboarding
+            Get Started Now
           </Button>
         </Card>
       </div>
