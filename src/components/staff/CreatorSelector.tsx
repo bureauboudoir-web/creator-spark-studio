@@ -27,13 +27,24 @@ export const CreatorSelector = () => {
     const fetchCreators = async () => {
       const { data, error } = await supabase
         .from('creators')
-        .select('id, user_id, profiles!inner(full_name, email)')
-        .order('profiles(full_name)');
+        .select('id, user_id, profiles!inner(full_name, email)');
 
-      if (!error && data) {
-        setCreators(data as any);
-        if (data.length > 0 && !selectedCreatorId) {
-          setSelectedCreatorId(data[0].id);
+      if (error) {
+        console.error('Error fetching creators:', error);
+        return;
+      }
+
+      if (data) {
+        // Sort client-side by full_name or email
+        const sortedCreators = [...data].sort((a, b) => 
+          (a.profiles.full_name || a.profiles.email).localeCompare(
+            b.profiles.full_name || b.profiles.email
+          )
+        );
+        
+        setCreators(sortedCreators as any);
+        if (sortedCreators.length > 0 && !selectedCreatorId) {
+          setSelectedCreatorId(sortedCreators[0].id);
         }
       }
     };
