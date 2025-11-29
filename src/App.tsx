@@ -16,6 +16,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ApiSettings from "./pages/ApiSettings";
 import CreatorList from "./pages/CreatorList";
 import CreatorDetail from "./pages/CreatorDetail";
+import StarterPackHistory from "./pages/StarterPackHistory";
+import StarterPackDetail from "./pages/StarterPackDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +42,8 @@ const App = () => (
             <Route path="/api-settings" element={<ApiSettings />} />
             <Route path="/creators" element={<CreatorList />} />
             <Route path="/creators/:id" element={<CreatorDetail />} />
+            <Route path="/starter-packs/history" element={<StarterPackHistory />} />
+            <Route path="/starter-packs/:id" element={<StarterPackDetail />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

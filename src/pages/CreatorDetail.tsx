@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/auth/RoleGuard";
-import { ArrowLeft, User, RefreshCw, FileJson, Sparkles, Loader2, AlertCircle, Package, CheckCircle, Edit, RotateCcw, Check, X, Save, Send } from "lucide-react";
+import { ArrowLeft, User, RefreshCw, FileJson, Sparkles, Loader2, AlertCircle, Package, CheckCircle, Edit, RotateCcw, Check, X, Save, Send, History } from "lucide-react";
 
 interface CreatorData {
   id: string;
@@ -854,6 +854,18 @@ const CreatorDetail = () => {
                   {/* Section C - Staff Review Actions */}
                   <Separator />
                   <div className="space-y-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-semibold">Staff Review Actions</h3>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/starter-packs/history?creator_id=${creator.id}`)}
+                        className="gap-2"
+                      >
+                        <History className="w-4 h-4" />
+                        View History
+                      </Button>
+                    </div>
                     <div className="flex flex-wrap gap-3">
                       {/* Save button */}
                       <Button
