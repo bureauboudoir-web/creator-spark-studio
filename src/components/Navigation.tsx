@@ -1,6 +1,6 @@
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
-import { Home, Library, Sparkles, Mic, User, Settings, Users, LogOut } from "lucide-react";
+import { Home, Library, Sparkles, User, Settings, Users, LogOut } from "lucide-react";
 import { LanguageSelector } from "./layout/LanguageSelector";
 import { RoleGuard } from "./auth/RoleGuard";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,7 +20,6 @@ export const Navigation = () => {
     { to: "/dashboard", label: "Dashboard", icon: Home, roles: null },
     { to: "/library", label: "Library", icon: Library, roles: null },
     { to: "/generator", label: "Generator", icon: Sparkles, roles: null },
-    { to: "/voice", label: "Voice", icon: Mic, staffOnly: true },
     { to: "/staff", label: "Staff", icon: Users, staffOnly: true },
     { to: "/admin", label: "Admin", icon: Settings, staffOnly: true },
   ];
