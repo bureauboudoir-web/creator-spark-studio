@@ -1,6 +1,6 @@
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
-import { Home, Library, Sparkles, User, Settings, Users, LogOut } from "lucide-react";
+import { Home, Library, Sparkles, User, Settings, Users, LogOut, Key } from "lucide-react";
 import { LanguageSelector } from "./layout/LanguageSelector";
 import { RoleGuard } from "./auth/RoleGuard";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,6 +22,7 @@ export const Navigation = () => {
     { to: "/generator", label: "Generator", icon: Sparkles, roles: null },
     { to: "/staff", label: "Staff", icon: Users, staffOnly: true },
     { to: "/admin", label: "Admin", icon: Settings, staffOnly: true },
+    { to: "/api-settings", label: "API Settings", icon: Key, roles: ['admin'] },
   ];
 
   const handleSignOut = async () => {
