@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.save-starter-pack]
 verify_jwt = false
+
+[functions.get-starter-packs]
+verify_jwt = false
+
+[functions.update-starter-pack-status]
+verify_jwt = false
