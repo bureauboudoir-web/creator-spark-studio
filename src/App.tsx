@@ -15,6 +15,7 @@ import StaffDashboard from "./pages/StaffDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ApiSettings from "./pages/ApiSettings";
 import CreatorList from "./pages/CreatorList";
+import CreatorDetail from "./pages/CreatorDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/api-settings" element={<ApiSettings />} />
             <Route path="/creators" element={<CreatorList />} />
+            <Route path="/creators/:id" element={<CreatorDetail />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
