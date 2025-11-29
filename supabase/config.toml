@@ -4,7 +4,7 @@ project_id = "xrmkhmpgkkyeiwmgmyxw"
 verify_jwt = false
 
 [functions.manage-api-settings]
-verify_jwt = false
+verify_jwt = true
 
 [functions.get-creators]
 verify_jwt = false
