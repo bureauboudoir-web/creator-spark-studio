@@ -60,6 +60,19 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(creator_id)) {
+      console.error('Invalid creator_id format:', creator_id);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid creator ID format. Cannot save in mock mode.' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Save or update starter pack in database
     let starterPackId: string;
     let status = 'draft';
