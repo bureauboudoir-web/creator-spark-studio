@@ -20,22 +20,22 @@ serve(async (req) => {
 
     console.log("Generating starter pack for creator:", creatorProfile);
 
-    // Generate different types of content in parallel
-    const [textPrompts, captions, imageStyles, videoScripts, personaAngles] = await Promise.all([
-      generateTextPrompts(LOVABLE_API_KEY, creatorProfile),
-      generateCaptions(LOVABLE_API_KEY, creatorProfile),
-      generateImageStyles(LOVABLE_API_KEY, creatorProfile),
+    // Generate all 5 tasks in parallel
+    const [conversationStarters, videoScripts, captions, storyTeasers, menuUpsell] = await Promise.all([
+      generateConversationStarters(LOVABLE_API_KEY, creatorProfile),
       generateVideoScripts(LOVABLE_API_KEY, creatorProfile),
-      generatePersonaAngles(LOVABLE_API_KEY, creatorProfile),
+      generateFeedCaptions(LOVABLE_API_KEY, creatorProfile),
+      generateStoryTeasers(LOVABLE_API_KEY, creatorProfile),
+      generateMenuUpsell(LOVABLE_API_KEY, creatorProfile),
     ]);
 
     return new Response(
       JSON.stringify({
-        textPrompts,
-        captions,
-        imageStyles,
-        videoScripts,
-        personaAngles,
+        conversation_starters: conversationStarters,
+        video_scripts: videoScripts,
+        captions: captions,
+        story_teasers: storyTeasers,
+        menu_upsell: menuUpsell,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -54,83 +54,180 @@ serve(async (req) => {
   }
 });
 
-async function generateTextPrompts(apiKey: string, profile: any): Promise<string[]> {
-  const prompt = `Generate 10 engaging text post prompts for a content creator with this profile:
-Bio: ${profile.bio || 'Content creator'}
-Persona: ${profile.persona || 'Professional'}
-Social Links: ${profile.socialLinks?.join(', ') || 'None'}
+// TASK 1: Conversation Starters (30 openers)
+async function generateConversationStarters(apiKey: string, profile: any): Promise<any> {
+  const prompt = `You are a professional content strategist working for a private client-management agency.
 
-Create prompts that are:
-- Engaging and conversation-starting
-- Aligned with their persona
-- Platform-optimized
-- Diverse in topics
+Creator Context:
+Name: ${profile.full_name || 'Content Creator'}
+Persona: ${profile.persona?.niche || 'Professional content creator'}
+Voice Style: ${profile.persona?.tone_of_voice || 'Friendly and professional'}
+Content Preferences: ${profile.persona?.content_strategy || 'Engaging content'}
+Audience Type: ${profile.onboarding?.audience_size || 'Growing audience'}
+Posting Frequency: ${profile.onboarding?.posting_frequency || 'Regular'}
 
-Return ONLY a JSON array of 10 strings, nothing else.`;
+TASK: Create 30 conversation openers for private messages to new and existing subscribers.
 
-  return callLovableAI(apiKey, prompt);
-}
+Groups:
+- Warm/welcoming (10 openers)
+- Playful/friendly (10 openers)
+- High-engagement / curiosity-driven prompts encouraging unlock (10 openers)
 
-async function generateCaptions(apiKey: string, profile: any): Promise<string[]> {
-  const prompt = `Generate 10 social media captions for a content creator with this profile:
-Bio: ${profile.bio || 'Content creator'}
-Persona: ${profile.persona || 'Professional'}
+Rules:
+- No explicit themes
+- Keep tone personal, friendly, emotional, and human
+- Use first-person conversational style ("I", "you", "we")
+- Safe for work
+- Encourage engagement and response
+- Written in the creator's voice
 
-Create captions that are:
-- Attention-grabbing
-- Include relevant hashtags
-- Call-to-action oriented
-- Varied in length and style
-
-Return ONLY a JSON array of 10 strings, nothing else.`;
-
-  return callLovableAI(apiKey, prompt);
-}
-
-async function generateImageStyles(apiKey: string, profile: any): Promise<string[]> {
-  const prompt = `Generate 5 image style guides for a content creator with this profile:
-Bio: ${profile.bio || 'Content creator'}
-Persona: ${profile.persona || 'Professional'}
-
-Create style guides that describe:
-- Visual aesthetic direction
-- Color palettes
-- Composition ideas
-- Mood and atmosphere
-
-Return ONLY a JSON array of 5 strings, nothing else.`;
+Return ONLY a JSON object in this exact format:
+{
+  "warm": ["opener 1", "opener 2", ...],
+  "playful": ["opener 1", "opener 2", ...],
+  "high_engagement": ["opener 1", "opener 2", ...]
+}`;
 
   return callLovableAI(apiKey, prompt);
 }
 
-async function generateVideoScripts(apiKey: string, profile: any): Promise<string[]> {
-  const prompt = `Generate 5 video script outlines for a content creator with this profile:
-Bio: ${profile.bio || 'Content creator'}
-Persona: ${profile.persona || 'Professional'}
+// TASK 2: Video Scripts (5 scripts)
+async function generateVideoScripts(apiKey: string, profile: any): Promise<any> {
+  const prompt = `You are a professional content strategist working for a private client-management agency.
 
-Create script outlines with:
-- Hook (first 3 seconds)
-- Main content points
-- Call to action
-- Estimated duration
+Creator Context:
+Name: ${profile.full_name || 'Content Creator'}
+Persona: ${profile.persona?.niche || 'Professional content creator'}
+Voice Style: ${profile.persona?.tone_of_voice || 'Friendly and professional'}
+Content Preferences: ${profile.persona?.content_strategy || 'Engaging content'}
+Menu Items: ${profile.menu_items?.join(', ') || 'Custom content'}
 
-Return ONLY a JSON array of 5 strings, nothing else.`;
+TASK: Create 5 paid video scripts.
+
+Each script must include:
+- Title
+- Hook
+- Emotional tone
+- Full 45-90 second speaking script
+- Soft call-to-action
+
+Rules:
+- No explicit themes
+- Keep completely non-adult
+- Personal and emotional connection
+- Written in creator's voice
+- Encourage viewers to message privately
+
+Return ONLY a JSON array in this exact format:
+[
+  {
+    "title": "script title",
+    "hook": "opening hook",
+    "tone": "emotional tone",
+    "script": "full script text"
+  }
+]`;
 
   return callLovableAI(apiKey, prompt);
 }
 
-async function generatePersonaAngles(apiKey: string, profile: any): Promise<string[]> {
-  const prompt = `Generate 3 brand voice variations for a content creator with this profile:
-Bio: ${profile.bio || 'Content creator'}
-Persona: ${profile.persona || 'Professional'}
+// TASK 3: Feed Captions (20 captions)
+async function generateFeedCaptions(apiKey: string, profile: any): Promise<any> {
+  const prompt = `You are a professional content strategist working for a private client-management agency.
 
-Create persona angles that are:
-- Distinct from each other
-- Authentic to the creator
-- Platform-appropriate
-- Scalable
+Creator Context:
+Name: ${profile.full_name || 'Content Creator'}
+Persona: ${profile.persona?.niche || 'Professional content creator'}
+Voice Style: ${profile.persona?.tone_of_voice || 'Friendly and professional'}
+Brand Keywords: ${profile.persona?.brand_keywords?.join(', ') || 'authentic, creative'}
 
-Return ONLY a JSON array of 3 strings describing each persona angle, nothing else.`;
+TASK: Create 20 feed captions.
+
+Requirements:
+- 10 short captions (under 20 words)
+- 10 long captions (40-80 words)
+
+Theme: connection, personality, storytelling, behind-the-scenes, lifestyle, feelings, curiosity.
+
+Rules:
+- No adult content
+- Written in creator's voice
+- Include soft CTAs like "check your DMs", "tell me...", etc.
+- Personal and engaging
+
+Return ONLY a JSON object in this exact format:
+{
+  "short": ["caption 1", "caption 2", ...],
+  "long": ["caption 1", "caption 2", ...]
+}`;
+
+  return callLovableAI(apiKey, prompt);
+}
+
+// TASK 4: Story Teasers (5 mini stories)
+async function generateStoryTeasers(apiKey: string, profile: any): Promise<any> {
+  const prompt = `You are a professional content strategist working for a private client-management agency.
+
+Creator Context:
+Name: ${profile.full_name || 'Content Creator'}
+Persona: ${profile.persona?.niche || 'Professional content creator'}
+Voice Style: ${profile.persona?.tone_of_voice || 'Friendly and professional'}
+Key Traits: ${profile.persona?.key_traits?.join(', ') || 'authentic, creative'}
+
+TASK: Create 5 short story-based teasers (2-3 paragraphs each).
+
+Theme options: Emotion, tension, anticipation, mystery, personal moments, behind-the-scenes reflections.
+
+Rules:
+- First-person as the creator
+- Nothing adult
+- End with soft CTA: "Message me if you want the full story"
+- Build curiosity and connection
+
+Return ONLY a JSON array in this exact format:
+[
+  {
+    "title": "story title",
+    "tone": "emotional tone",
+    "text": "2-3 paragraph story"
+  }
+]`;
+
+  return callLovableAI(apiKey, prompt);
+}
+
+// TASK 5: Menu & Upsell Copy
+async function generateMenuUpsell(apiKey: string, profile: any): Promise<any> {
+  const prompt = `You are a professional content strategist working for a private client-management agency.
+
+Creator Context:
+Name: ${profile.full_name || 'Content Creator'}
+Persona: ${profile.persona?.niche || 'Professional content creator'}
+Voice Style: ${profile.persona?.tone_of_voice || 'Friendly and professional'}
+Menu Items: ${profile.menu_items?.join(', ') || 'Custom content, exclusive access, personal messages'}
+
+TASK: Turn the creator's menu into sales copy.
+
+For each menu item:
+- 1-2 sentence description
+- Non-explicit but intimate
+- Focus on attention, fantasy, exclusivity
+
+Then create:
+- 3 bundle ideas
+- 3 loyal fan offers
+
+Rules:
+- Safe for work
+- Emphasize personal connection, customization, exclusivity
+- Written in creator's voice
+
+Return ONLY a JSON object in this exact format:
+{
+  "items": ["menu item 1 description", "menu item 2 description", ...],
+  "bundles": ["bundle 1", "bundle 2", "bundle 3"],
+  "loyal_fan_offers": ["offer 1", "offer 2", "offer 3"]
+}`;
 
   return callLovableAI(apiKey, prompt);
 }
@@ -148,7 +245,7 @@ async function callLovableAI(apiKey: string, prompt: string): Promise<any> {
         messages: [
           {
             role: 'system',
-            content: 'You are a content strategy expert. Always respond with valid JSON arrays only, no markdown formatting or explanation.',
+            content: 'You are a professional content strategy expert. Always respond with valid JSON only, no markdown formatting or explanation.',
           },
           {
             role: 'user',
