@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/auth/RoleGuard";
+import { useAuth } from "@/hooks/useAuth";
 import { Key, Eye, EyeOff, Loader2 } from "lucide-react";
 
 const ApiSettings = () => {
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -20,8 +22,13 @@ const ApiSettings = () => {
   });
 
   useEffect(() => {
-    loadSettings();
-  }, []);
+    // Only load settings after auth is complete and user is authenticated
+    if (!authLoading && user) {
+      loadSettings();
+    } else if (!authLoading && !user) {
+      setLoading(false);
+    }
+  }, [authLoading, user]);
 
   const loadSettings = async () => {
     try {
