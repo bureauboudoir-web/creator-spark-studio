@@ -1,29 +1,32 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Search, Plus, Loader2, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus } from "lucide-react";
+import { useCreatorContext } from "@/contexts/CreatorContext";
+import { supabase } from "@/integrations/supabase/client";
+import { ContentItem } from "@/types/content";
+import { CONTENT_CATEGORIES } from "@/lib/content-categories";
 import { ContentCard } from "@/components/content/ContentCard";
 import { AddContentDialog } from "@/components/content/AddContentDialog";
-import { CONTENT_CATEGORIES } from "@/lib/content-categories";
-import { ContentItem } from "@/types/content";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { useCreatorContext } from "@/contexts/CreatorContext";
-import { useSearchParams } from "react-router-dom";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { NoCreatorSelected } from "@/components/shared/NoCreatorSelected";
+import { MockModeWarning } from "@/components/shared/MockModeWarning";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CreatorLibrary() {
-  const { selectedCreatorId, selectedCreator, usingMockData } = useCreatorContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(
-    searchParams.get("category") || "text"
+    searchParams.get("category") || CONTENT_CATEGORIES[0].id
   );
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const { selectedCreatorId, selectedCreator, usingMockData } = useCreatorContext();
+  const { toast } = useToast();
 
   const fetchContent = async () => {
     if (!selectedCreatorId) {
@@ -33,20 +36,39 @@ export default function CreatorLibrary() {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("content_items")
         .select("*")
         .eq("creator_id", selectedCreatorId)
-        .eq("category", selectedCategory)
-        .order("created_at", { ascending: false });
+        .eq("folder", selectedCategory);
+
+      const { data, error } = await query.order("created_at", { ascending: false });
 
       if (error) throw error;
       setContentItems(data || []);
     } catch (error) {
       console.error("Error fetching content:", error);
-      toast.error("Failed to load content");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchContent();
+      toast({
+        title: "Refreshed",
+        description: "Content has been refreshed from the database",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh content",
+        variant: "destructive",
+      });
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -74,11 +96,18 @@ export default function CreatorLibrary() {
     try {
       const { error } = await supabase.from("content_items").delete().eq("id", id);
       if (error) throw error;
-      toast.success("Content deleted successfully");
+      toast({
+        title: "Deleted",
+        description: "Content deleted successfully",
+      });
       fetchContent();
     } catch (error) {
       console.error("Error deleting content:", error);
-      toast.error("Failed to delete content");
+      toast({
+        title: "Error",
+        description: "Failed to delete content",
+        variant: "destructive",
+      });
     }
   };
 
@@ -92,34 +121,33 @@ export default function CreatorLibrary() {
   if (!selectedCreatorId) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">
-            Please select a creator to view their library
-          </p>
-        </div>
+        <PageHeader title="Content Library" />
+        <NoCreatorSelected />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Creator Library</h1>
-        <p className="text-muted-foreground">
-          Manage all your content assets in one place
-        </p>
-      </div>
+      <PageHeader 
+        title="Content Library"
+        subtitle={`Managing content for ${selectedCreator?.name || 'selected creator'}`}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        }
+      />
+      
+      {usingMockData && <MockModeWarning />}
 
-      {usingMockData && selectedCreator && (
-        <Alert className="bg-blue-500/10 border-blue-500/20">
-          <Info className="h-4 w-4 text-blue-500" />
-          <AlertDescription className="text-blue-700 dark:text-blue-400">
-            Viewing mock library for: <strong>{selectedCreator.name}</strong>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="flex gap-4">
+      <div className="flex items-center gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
@@ -129,24 +157,20 @@ export default function CreatorLibrary() {
             className="pl-10"
           />
         </div>
-        <Button onClick={() => setAddDialogOpen(true)}>
+        <Button onClick={() => setDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Add New
         </Button>
       </div>
 
       <Tabs value={selectedCategory} onValueChange={handleCategoryChange}>
-        <TabsList className="grid grid-cols-5 lg:grid-cols-10 gap-2 h-auto">
+        <TabsList className="mb-4 flex-wrap h-auto">
           {CONTENT_CATEGORIES.map((category) => {
             const Icon = category.icon;
             return (
-              <TabsTrigger
-                key={category.id}
-                value={category.id}
-                className="flex flex-col gap-1 py-3"
-              >
-                <Icon className="w-4 h-4" />
-                <span className="text-xs">{category.label}</span>
+              <TabsTrigger key={category.id} value={category.id}>
+                <Icon className="w-4 h-4 mr-2" />
+                {category.label}
               </TabsTrigger>
             );
           })}
@@ -156,7 +180,7 @@ export default function CreatorLibrary() {
           <TabsContent key={category.id} value={category.id} className="space-y-4">
             {loading ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">Loading content...</p>
+                <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
               </div>
             ) : filteredContent.length === 0 ? (
               <div className="text-center py-12 border-2 border-dashed rounded-lg">
@@ -167,7 +191,7 @@ export default function CreatorLibrary() {
                     : `No ${category.label.toLowerCase()} content yet`}
                 </p>
                 {!searchQuery && (
-                  <Button onClick={() => setAddDialogOpen(true)}>
+                  <Button onClick={() => setDialogOpen(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add {category.label}
                   </Button>
@@ -195,8 +219,8 @@ export default function CreatorLibrary() {
       </Tabs>
 
       <AddContentDialog
-        open={addDialogOpen}
-        onOpenChange={setAddDialogOpen}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
         onSuccess={fetchContent}
       />
     </div>
