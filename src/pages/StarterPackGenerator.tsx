@@ -175,7 +175,7 @@ export default function StarterPackGenerator() {
                   <span className="font-medium">30 Conversation Starters</span>
                 </div>
                 <p className="text-xs text-muted-foreground pl-6">
-                  Based on {creatorData.tone_of_voice || creatorData.persona_character?.tone_of_voice || creatorData.persona?.tone_of_voice || 'personality'}, {creatorData.scripts_messaging?.fan_relationship_style || creatorData.messaging?.fan_relationship_style || 'messaging style'}, and engagement hooks
+                  Based on {creatorData.voice_preferences?.tone_of_voice || creatorData.persona_character?.communication_style || 'personality'}, {creatorData.scripts_messaging?.message_tone || 'messaging style'}, and engagement hooks
                 </p>
               </div>
 
@@ -184,7 +184,7 @@ export default function StarterPackGenerator() {
                 <span className="font-medium">5 Video Scripts</span>
               </div>
               <p className="text-xs text-muted-foreground pl-6">
-                Using {creatorData.creator_story?.brand_origin_story ? 'brand story' : 'profile'}, {creatorData.visual_identity?.visual_vibe || 'visual style'}, and storytelling approach
+                Using {creatorData.creator_story?.origin_story ? 'brand story' : 'profile'}, {creatorData.visual_identity?.photo_style || 'visual style'}, and storytelling approach
               </p>
 
               <div className="flex items-center gap-2 text-sm">
@@ -192,7 +192,7 @@ export default function StarterPackGenerator() {
                 <span className="font-medium">20 Feed Captions</span>
               </div>
               <p className="text-xs text-muted-foreground pl-6">
-                Reflecting {creatorData.persona_character?.character_identity || creatorData.persona?.character_identity || 'personality'} and {creatorData.content_preferences?.preferred_atmosphere || 'content style'}
+                Reflecting {creatorData.persona_character?.persona_name || 'personality'} and {creatorData.content_preferences?.content_energy_level || 'content style'}
               </p>
 
               <div className="flex items-center gap-2 text-sm">
@@ -200,7 +200,7 @@ export default function StarterPackGenerator() {
                 <span className="font-medium">5 Story Teasers</span>
               </div>
               <p className="text-xs text-muted-foreground pl-6">
-                Built around emotional storytelling and {creatorData.content_preferences?.preferred_themes?.join(', ') || 'preferred themes'}
+                Built around emotional storytelling and {creatorData.content_preferences?.preferred_content_types?.join(', ') || 'preferred themes'}
               </p>
 
               <div className="flex items-center gap-2 text-sm">
@@ -208,7 +208,7 @@ export default function StarterPackGenerator() {
                 <span className="font-medium">Menu & Upsell Copy</span>
               </div>
               <p className="text-xs text-muted-foreground pl-6">
-                Showcasing {(creatorData.pricing_structure?.menu_item_names || creatorData.pricing?.menu_item_names || []).length} menu items with {creatorData.pricing_structure?.bundle_style || creatorData.pricing?.bundle_style || 'bundle'} offers
+                Showcasing {creatorData.menu_items?.length || 0} menu items with {creatorData.bundles?.length || 0} bundle offers
               </p>
             </CardContent>
           </Card>

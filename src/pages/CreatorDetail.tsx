@@ -4,10 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, User, RefreshCw, Loader2, CheckCircle2, XCircle, MapPin, Calendar, Mic } from "lucide-react";
+import { ArrowLeft, User, RefreshCw, Loader2, CheckCircle2, XCircle, MapPin, Calendar } from "lucide-react";
 import { BBCreatorFull } from "@/types/bb-creator";
 import { getOnboardingSections } from "@/types/onboarding-checklist";
 import { ErrorState } from "@/components/shared/ErrorState";
@@ -57,11 +56,11 @@ const CreatorDetail = () => {
     const completion = creator.onboarding_completion || 0;
     
     if (completion === 100) {
-      return <Badge className="bg-green-500/10 text-green-700 border-green-500/20">Active</Badge>;
+      return <Badge className="bg-green-500/10 text-green-700 border-green-500/20">Complete</Badge>;
     } else if (completion > 0) {
-      return <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20">Onboarding</Badge>;
+      return <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20">In Progress</Badge>;
     } else {
-      return <Badge className="bg-red-500/10 text-red-700 border-red-500/20">Missing Info</Badge>;
+      return <Badge className="bg-red-500/10 text-red-700 border-red-500/20">Not Started</Badge>;
     }
   };
 
@@ -140,29 +139,28 @@ const CreatorDetail = () => {
             <div className="flex-1 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold">{creator.personal_info?.name || creator.name || "Unnamed Creator"}</h1>
+                  <h1 className="text-3xl font-bold">
+                    {creator.personal_information?.full_name || creator.name || "Unnamed Creator"}
+                  </h1>
                   <p className="text-muted-foreground">{creator.email}</p>
                 </div>
                 {getStatusBadge()}
               </div>
 
               <div className="flex flex-wrap gap-4 text-sm">
-                {creator.personal_info?.location && (
+                {(creator.personal_information?.location_city || creator.personal_information?.location_country) && (
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <MapPin className="w-4 h-4" />
-                    <span>{creator.personal_info.location}</span>
+                    <span>
+                      {[creator.personal_information.location_city, creator.personal_information.location_country]
+                        .filter(Boolean).join(', ')}
+                    </span>
                   </div>
                 )}
-                {creator.personal_info?.age && (
+                {creator.personal_information?.age && (
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <Calendar className="w-4 h-4" />
-                    <span>{creator.personal_info.age} years old</span>
-                  </div>
-                )}
-                {creator.voice_samples_available && (
-                  <div className="flex items-center gap-1 text-green-600">
-                    <Mic className="w-4 h-4" />
-                    <span>Voice samples available</span>
+                    <span>{creator.personal_information.age} years old</span>
                   </div>
                 )}
               </div>
@@ -176,24 +174,20 @@ const CreatorDetail = () => {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {(creator.persona_character?.character_identity || creator.persona?.character_identity) && (
-                  <Badge variant="outline">{creator.persona_character?.character_identity || creator.persona?.character_identity}</Badge>
+                {creator.persona_character?.persona_name && (
+                  <Badge variant="outline">{creator.persona_character.persona_name}</Badge>
                 )}
-                {(creator.tone_of_voice || creator.persona_character?.tone_of_voice || creator.persona?.tone_of_voice) && (
-                  <Badge variant="outline">{creator.tone_of_voice || creator.persona_character?.tone_of_voice || creator.persona?.tone_of_voice}</Badge>
+                {creator.of_strategy?.niche && (
+                  <Badge variant="outline">{creator.of_strategy.niche}</Badge>
                 )}
-                {creator.niche && (
-                  <Badge variant="outline">{creator.niche}</Badge>
-                )}
-                {(creator.posting_frequency || creator.content_preferences?.posting_frequency) && (
-                  <Badge variant="outline">{creator.posting_frequency || creator.content_preferences?.posting_frequency}</Badge>
+                {creator.content_preferences?.posting_frequency && (
+                  <Badge variant="outline">{creator.content_preferences.posting_frequency}</Badge>
                 )}
               </div>
 
-              {(creator.persona_character?.personality_traits || creator.persona?.personality_traits) && 
-               (creator.persona_character?.personality_traits || creator.persona?.personality_traits || []).length > 0 && (
+              {creator.persona_character?.character_traits && creator.persona_character.character_traits.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {(creator.persona_character?.personality_traits || creator.persona?.personality_traits || []).map((trait, idx) => (
+                  {creator.persona_character.character_traits.map((trait, idx) => (
                     <Badge key={idx} variant="secondary">{trait}</Badge>
                   ))}
                 </div>
@@ -212,7 +206,7 @@ const CreatorDetail = () => {
           {/* Onboarding Status */}
           <Card>
             <CardHeader>
-              <CardTitle>Onboarding Status</CardTitle>
+              <CardTitle>Onboarding Status ({creator.onboarding_sections_completed?.length || 0}/16)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {onboardingSections.map((section) => (
@@ -234,32 +228,51 @@ const CreatorDetail = () => {
           </Card>
 
           {/* Personal Information */}
-          {(creator.personal_information || creator.personal_info) && (
+          {creator.personal_information && (
             <Card>
               <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Name</p>
-                  <p>{creator.personal_information?.name || creator.personal_info?.name || "Not provided yet"}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Full Name</p>
+                  <p>{creator.personal_information.full_name || "Not provided yet"}</p>
                 </div>
-                {(creator.personal_information?.age || creator.personal_info?.age) && (
+                {creator.personal_information.preferred_name && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Preferred Name</p>
+                    <p>{creator.personal_information.preferred_name}</p>
+                  </div>
+                )}
+                {creator.personal_information.age && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Age</p>
-                    <p>{creator.personal_information?.age || creator.personal_info?.age}</p>
+                    <p>{creator.personal_information.age}</p>
                   </div>
                 )}
-                {(creator.personal_information?.location || creator.personal_info?.location) && (
+                {(creator.personal_information.location_city || creator.personal_information.location_country) && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Location</p>
-                    <p>{creator.personal_information?.location || creator.personal_info?.location}</p>
+                    <p>
+                      {[creator.personal_information.location_city, creator.personal_information.location_country]
+                        .filter(Boolean).join(', ')}
+                    </p>
                   </div>
                 )}
-                {(creator.personal_information?.short_bio || creator.personal_info?.short_bio) && (
+                {creator.personal_information.bio && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Bio</p>
-                    <p className="text-sm">{creator.personal_information?.short_bio || creator.personal_info?.short_bio}</p>
+                    <p className="text-sm">{creator.personal_information.bio}</p>
+                  </div>
+                )}
+                {creator.personal_information.languages && creator.personal_information.languages.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Languages</p>
+                    <div className="flex flex-wrap gap-2">
+                      {creator.personal_information.languages.map((lang, idx) => (
+                        <Badge key={idx} variant="outline">{lang}</Badge>
+                      ))}
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -273,12 +286,6 @@ const CreatorDetail = () => {
                 <CardTitle>Physical Description</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {creator.physical_description.general_appearance && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">General Appearance</p>
-                    <p className="text-sm">{creator.physical_description.general_appearance}</p>
-                  </div>
-                )}
                 <div className="grid grid-cols-2 gap-3">
                   {creator.physical_description.height && (
                     <div>
@@ -296,6 +303,12 @@ const CreatorDetail = () => {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Hair Color</p>
                       <p className="text-sm">{creator.physical_description.hair_color}</p>
+                    </div>
+                  )}
+                  {creator.physical_description.hair_length && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Hair Length</p>
+                      <p className="text-sm">{creator.physical_description.hair_length}</p>
                     </div>
                   )}
                   {creator.physical_description.eye_color && (
@@ -326,83 +339,67 @@ const CreatorDetail = () => {
                 <CardTitle>Amsterdam Story</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {creator.amsterdam_story.origin_story && (
+                {creator.amsterdam_story.how_they_arrived && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Origin Story</p>
-                    <p className="text-sm">{creator.amsterdam_story.origin_story}</p>
+                    <p className="text-sm font-medium text-muted-foreground">How They Arrived</p>
+                    <p className="text-sm">{creator.amsterdam_story.how_they_arrived}</p>
                   </div>
                 )}
-                {creator.amsterdam_story.neighborhood && (
+                {creator.amsterdam_story.why_amsterdam && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Neighborhood</p>
-                    <p className="text-sm">{creator.amsterdam_story.neighborhood}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Why Amsterdam</p>
+                    <p className="text-sm">{creator.amsterdam_story.why_amsterdam}</p>
                   </div>
                 )}
-                {creator.amsterdam_story.city_connection && (
+                {creator.amsterdam_story.connection_to_city && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">City Connection</p>
-                    <p className="text-sm">{creator.amsterdam_story.city_connection}</p>
+                    <p className="text-sm">{creator.amsterdam_story.connection_to_city}</p>
                   </div>
                 )}
               </CardContent>
             </Card>
           )}
+        </div>
 
-          {/* Creator Persona */}
-          {(creator.persona_character || creator.persona) && (
+        {/* Right Column */}
+        <div className="space-y-6">
+          
+          {/* Persona & Character */}
+          {creator.persona_character && (
             <Card>
               <CardHeader>
-                <CardTitle>Creator Persona</CardTitle>
+                <CardTitle>Persona & Character</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {(creator.tone_of_voice || creator.persona_character?.tone_of_voice || creator.persona?.tone_of_voice) && (
+                {creator.persona_character.persona_name && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Tone of Voice</p>
-                    <p className="text-sm">{creator.tone_of_voice || creator.persona_character?.tone_of_voice || creator.persona?.tone_of_voice}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Persona Name</p>
+                    <p className="text-sm">{creator.persona_character.persona_name}</p>
                   </div>
                 )}
-                {(creator.persona_character?.character_identity || creator.persona?.character_identity) && (
+                {creator.persona_character.communication_style && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Character Identity</p>
-                    <p className="text-sm">{creator.persona_character?.character_identity || creator.persona?.character_identity}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Communication Style</p>
+                    <p className="text-sm">{creator.persona_character.communication_style}</p>
                   </div>
                 )}
-                {(creator.persona_character?.mood_energy || creator.persona?.mood_energy) && (
+                {creator.persona_character.character_traits && creator.persona_character.character_traits.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Mood/Energy</p>
-                    <p className="text-sm">{creator.persona_character?.mood_energy || creator.persona?.mood_energy}</p>
-                  </div>
-                )}
-                {(creator.persona_character?.writing_style || creator.persona?.writing_style) && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Writing Style</p>
-                    <p className="text-sm">{creator.persona_character?.writing_style || creator.persona?.writing_style}</p>
-                  </div>
-                )}
-                {(creator.persona_character?.emotional_style || creator.persona?.emotional_style) && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Emotional Style</p>
-                    <p className="text-sm">{creator.persona_character?.emotional_style || creator.persona?.emotional_style}</p>
-                  </div>
-                )}
-                {(creator.persona_character?.personality_traits || creator.persona?.personality_traits) && 
-                 (creator.persona_character?.personality_traits || creator.persona?.personality_traits || []).length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Personality Traits</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Character Traits</p>
                     <div className="flex flex-wrap gap-2">
-                      {(creator.persona_character?.personality_traits || creator.persona?.personality_traits || []).map((trait, idx) => (
+                      {creator.persona_character.character_traits.map((trait, idx) => (
                         <Badge key={idx} variant="secondary">{trait}</Badge>
                       ))}
                     </div>
                   </div>
                 )}
-                {(creator.persona_character?.audience_impression_goals || creator.persona?.audience_impression_goals) && 
-                 (creator.persona_character?.audience_impression_goals || creator.persona?.audience_impression_goals || []).length > 0 && (
+                {creator.persona_character.roleplay_styles && creator.persona_character.roleplay_styles.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Audience Impression Goals</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Roleplay Styles</p>
                     <div className="flex flex-wrap gap-2">
-                      {(creator.persona_character?.audience_impression_goals || creator.persona?.audience_impression_goals || []).map((goal, idx) => (
-                        <Badge key={idx} variant="outline">{goal}</Badge>
+                      {creator.persona_character.roleplay_styles.map((style, idx) => (
+                        <Badge key={idx} variant="outline">{style}</Badge>
                       ))}
                     </div>
                   </div>
@@ -411,43 +408,39 @@ const CreatorDetail = () => {
             </Card>
           )}
 
-          {/* Audience Profile */}
-          {creator.audience_profile && (
+          {/* Scripts & Messaging */}
+          {creator.scripts_messaging && (
             <Card>
               <CardHeader>
-                <CardTitle>Audience Profile</CardTitle>
+                <CardTitle>Scripts & Messaging Style</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {creator.audience_profile.engagement_style && (
+                {creator.scripts_messaging.message_tone && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Engagement Style</p>
-                    <p className="text-sm">{creator.audience_profile.engagement_style}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Message Tone</p>
+                    <p className="text-sm">{creator.scripts_messaging.message_tone}</p>
                   </div>
                 )}
-                {creator.audience_profile.community_tone && (
+                {creator.scripts_messaging.selling_strategy && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Community Tone</p>
-                    <p className="text-sm">{creator.audience_profile.community_tone}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Selling Strategy</p>
+                    <p className="text-sm">{creator.scripts_messaging.selling_strategy}</p>
                   </div>
                 )}
-                {creator.audience_profile.target_demographics && creator.audience_profile.target_demographics.length > 0 && (
+                {creator.scripts_messaging.flirting_style && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Target Demographics</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.audience_profile.target_demographics.map((demo, idx) => (
-                        <Badge key={idx} variant="secondary">{demo}</Badge>
+                    <p className="text-sm font-medium text-muted-foreground">Flirting Style</p>
+                    <p className="text-sm">{creator.scripts_messaging.flirting_style}</p>
+                  </div>
+                )}
+                {creator.scripts_messaging.high_converting_phrases && creator.scripts_messaging.high_converting_phrases.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">High-Converting Phrases</p>
+                    <ul className="list-disc list-inside text-sm space-y-1">
+                      {creator.scripts_messaging.high_converting_phrases.map((phrase, idx) => (
+                        <li key={idx}>{phrase}</li>
                       ))}
-                    </div>
-                  </div>
-                )}
-                {creator.audience_profile.audience_interests && creator.audience_profile.audience_interests.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Audience Interests</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.audience_profile.audience_interests.map((interest, idx) => (
-                        <Badge key={idx} variant="outline">{interest}</Badge>
-                      ))}
-                    </div>
+                    </ul>
                   </div>
                 )}
               </CardContent>
@@ -467,270 +460,42 @@ const CreatorDetail = () => {
                     <p className="text-sm">{creator.content_preferences.posting_frequency}</p>
                   </div>
                 )}
-                {creator.content_preferences.preferred_atmosphere && (
+                {creator.content_preferences.content_energy_level && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Preferred Atmosphere</p>
-                    <p className="text-sm">{creator.content_preferences.preferred_atmosphere}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Energy Level</p>
+                    <p className="text-sm">{creator.content_preferences.content_energy_level}</p>
                   </div>
                 )}
-                {creator.content_preferences.preferred_visual_style && (
+                {creator.content_preferences.preferred_content_types && creator.content_preferences.preferred_content_types.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Visual Style</p>
-                    <p className="text-sm">{creator.content_preferences.preferred_visual_style}</p>
-                  </div>
-                )}
-                {creator.content_preferences.audience_type && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Audience Type</p>
-                    <p className="text-sm">{creator.content_preferences.audience_type}</p>
-                  </div>
-                )}
-                {creator.content_preferences.preferred_themes && creator.content_preferences.preferred_themes.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Preferred Themes</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Preferred Content Types</p>
                     <div className="flex flex-wrap gap-2">
-                      {creator.content_preferences.preferred_themes.map((theme, idx) => (
-                        <Badge key={idx} variant="secondary">{theme}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {creator.content_preferences.preferred_storyline_types && creator.content_preferences.preferred_storyline_types.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Storyline Types</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.content_preferences.preferred_storyline_types.map((type, idx) => (
+                      {creator.content_preferences.preferred_content_types.map((type, idx) => (
                         <Badge key={idx} variant="outline">{type}</Badge>
                       ))}
                     </div>
                   </div>
                 )}
-                {creator.content_preferences.content_strategy_preferences && creator.content_preferences.content_strategy_preferences.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Content Strategy</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.content_preferences.content_strategy_preferences.map((strategy, idx) => (
-                        <Badge key={idx} variant="outline">{strategy}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {creator.content_preferences.content_to_avoid && creator.content_preferences.content_to_avoid.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Content to Avoid</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.content_preferences.content_to_avoid.map((avoid, idx) => (
-                        <Badge key={idx} variant="destructive">{avoid}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Right Column */}
-        <div className="space-y-6">
-          
-          {/* Visual Identity */}
-          {creator.visual_identity && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Visual Identity</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {creator.visual_identity.appearance_style && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Appearance Style</p>
-                    <p className="text-sm">{creator.visual_identity.appearance_style}</p>
-                  </div>
-                )}
-                {creator.visual_identity.visual_vibe && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Visual Vibe</p>
-                    <p className="text-sm">{creator.visual_identity.visual_vibe}</p>
-                  </div>
-                )}
-                {creator.visual_identity.signature_look && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Signature Look</p>
-                    <p className="text-sm">{creator.visual_identity.signature_look}</p>
-                  </div>
-                )}
-                {creator.visual_identity.unique_identifiers && creator.visual_identity.unique_identifiers.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Unique Identifiers</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.visual_identity.unique_identifiers.map((identifier, idx) => (
-                        <Badge key={idx} variant="secondary">{identifier}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           )}
 
-          {/* Messaging Style */}
-          {creator.messaging && (
+          {/* Menu Items */}
+          {creator.menu_items && creator.menu_items.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Messaging Style</CardTitle>
+                <CardTitle>Menu Items</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {creator.messaging.writing_tone && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Writing Tone</p>
-                    <p className="text-sm">{creator.messaging.writing_tone}</p>
-                  </div>
-                )}
-                {creator.messaging.conversation_style && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Conversation Style</p>
-                    <p className="text-sm">{creator.messaging.conversation_style}</p>
-                  </div>
-                )}
-                {creator.messaging.message_structure && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Message Structure</p>
-                    <p className="text-sm">{creator.messaging.message_structure}</p>
-                  </div>
-                )}
-                {creator.messaging.storytelling_style && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Storytelling Style</p>
-                    <p className="text-sm">{creator.messaging.storytelling_style}</p>
-                  </div>
-                )}
-                {creator.messaging.fan_relationship_style && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Fan Relationship Style</p>
-                    <p className="text-sm">{creator.messaging.fan_relationship_style}</p>
-                  </div>
-                )}
-                {creator.messaging.emotional_angles && creator.messaging.emotional_angles.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Emotional Angles</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.messaging.emotional_angles.map((angle, idx) => (
-                        <Badge key={idx} variant="secondary">{angle}</Badge>
-                      ))}
+                {creator.menu_items.map((item, idx) => (
+                  <div key={idx} className="p-3 border rounded-lg">
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="font-medium">{item.title}</p>
+                      <Badge>${item.price}</Badge>
                     </div>
+                    <p className="text-sm text-muted-foreground">{item.description}</p>
                   </div>
-                )}
-                {creator.messaging.engagement_hooks && creator.messaging.engagement_hooks.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Engagement Hooks</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.messaging.engagement_hooks.map((hook, idx) => (
-                        <Badge key={idx} variant="outline">{hook}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Pricing Structure */}
-          {creator.pricing && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Pricing & Offers</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {creator.pricing.description_style && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Description Style</p>
-                    <p className="text-sm">{creator.pricing.description_style}</p>
-                  </div>
-                )}
-                {creator.pricing.bundle_style && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Bundle Style</p>
-                    <p className="text-sm">{creator.pricing.bundle_style}</p>
-                  </div>
-                )}
-                {creator.pricing.menu_item_names && creator.pricing.menu_item_names.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Menu Items</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.pricing.menu_item_names.map((item, idx) => (
-                        <Badge key={idx} variant="secondary">{item}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {creator.pricing.offer_types && creator.pricing.offer_types.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Offer Types</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.pricing.offer_types.map((offer, idx) => (
-                        <Badge key={idx} variant="outline">{offer}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {creator.pricing.value_statements && creator.pricing.value_statements.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Value Statements</p>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
-                      {creator.pricing.value_statements.map((statement, idx) => (
-                        <li key={idx}>{statement}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Creator Story */}
-          {creator.creator_story && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Creator Story</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {creator.creator_story.background_story && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Background Story</p>
-                    <p className="text-sm">{creator.creator_story.background_story}</p>
-                  </div>
-                )}
-                {creator.creator_story.personality_background && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Personality Background</p>
-                    <p className="text-sm">{creator.creator_story.personality_background}</p>
-                  </div>
-                )}
-                {creator.creator_story.brand_origin_story && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Brand Origin</p>
-                    <p className="text-sm">{creator.creator_story.brand_origin_story}</p>
-                  </div>
-                )}
-                {creator.creator_story.lifestyle_themes && creator.creator_story.lifestyle_themes.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Lifestyle Themes</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.creator_story.lifestyle_themes.map((theme, idx) => (
-                        <Badge key={idx} variant="secondary">{theme}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {creator.creator_story.motivations && creator.creator_story.motivations.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Motivations</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.creator_story.motivations.map((motivation, idx) => (
-                        <Badge key={idx} variant="outline">{motivation}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                ))}
               </CardContent>
             </Card>
           )}
@@ -739,47 +504,56 @@ const CreatorDetail = () => {
           {creator.boundaries && (
             <Card>
               <CardHeader>
-                <CardTitle>Boundaries (Staff Reference)</CardTitle>
+                <CardTitle>Boundaries & Comfort Levels</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {creator.boundaries.creative_limits && creator.boundaries.creative_limits.length > 0 && (
+                {creator.boundaries.hard_limits && creator.boundaries.hard_limits.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Creative Limits</p>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
-                      {creator.boundaries.creative_limits.map((limit, idx) => (
-                        <li key={idx}>{limit}</li>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Hard Limits</p>
+                    <div className="flex flex-wrap gap-2">
+                      {creator.boundaries.hard_limits.map((limit, idx) => (
+                        <Badge key={idx} variant="destructive">{limit}</Badge>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
-                {creator.boundaries.content_comfort_zones && creator.boundaries.content_comfort_zones.length > 0 && (
+                {creator.boundaries.creative_comfort_zones && creator.boundaries.creative_comfort_zones.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Content Comfort Zones</p>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
-                      {creator.boundaries.content_comfort_zones.map((zone, idx) => (
-                        <li key={idx}>{zone}</li>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Comfort Zones</p>
+                    <div className="flex flex-wrap gap-2">
+                      {creator.boundaries.creative_comfort_zones.map((zone, idx) => (
+                        <Badge key={idx} variant="secondary">{zone}</Badge>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
-                {creator.boundaries.communication_preferences && creator.boundaries.communication_preferences.length > 0 && (
+              </CardContent>
+            </Card>
+          )}
+
+          {/* OF Strategy */}
+          {creator.of_strategy && (
+            <Card>
+              <CardHeader>
+                <CardTitle>OnlyFans Strategy</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {creator.of_strategy.niche && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Communication Preferences</p>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
-                      {creator.boundaries.communication_preferences.map((pref, idx) => (
-                        <li key={idx}>{pref}</li>
-                      ))}
-                    </ul>
+                    <p className="text-sm font-medium text-muted-foreground">Niche</p>
+                    <p className="text-sm">{creator.of_strategy.niche}</p>
                   </div>
                 )}
-                {creator.boundaries.acceptable_topic_boundaries && creator.boundaries.acceptable_topic_boundaries.length > 0 && (
+                {creator.of_strategy.target_audience && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Topic Boundaries</p>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
-                      {creator.boundaries.acceptable_topic_boundaries.map((boundary, idx) => (
-                        <li key={idx}>{boundary}</li>
-                      ))}
-                    </ul>
+                    <p className="text-sm font-medium text-muted-foreground">Target Audience</p>
+                    <p className="text-sm">{creator.of_strategy.target_audience}</p>
+                  </div>
+                )}
+                {creator.of_strategy.engagement_strategy && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Engagement Strategy</p>
+                    <p className="text-sm">{creator.of_strategy.engagement_strategy}</p>
                   </div>
                 )}
               </CardContent>

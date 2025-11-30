@@ -17,73 +17,78 @@ export const REQUIRED_ONBOARDING_SECTIONS = [
   'content_preferences',
   'visual_identity',
   'creator_story',
-  'audience_profile',
-  'posting_frequency',
-  'niche',
-  'tone_of_voice',
-  'content_style',
+  'menu_items',
+  'bundles',
+  'loyal_fan_offers',
+  'voice_preferences',
+  'media_uploads',
+  'of_strategy',
 ] as const;
 
 export const ONBOARDING_SECTION_LABELS: Record<string, { label: string; description: string }> = {
   personal_information: {
     label: 'Personal Information',
-    description: 'Name, age, location, bio',
+    description: 'Name, age, location, nationality, languages, bio',
   },
   physical_description: {
     label: 'Physical Description',
-    description: 'Appearance details, body type, features',
+    description: 'Hair, eyes, body type, tattoos, piercings',
   },
   amsterdam_story: {
     label: 'Amsterdam Story',
-    description: 'Location narrative, city connection',
+    description: 'How you arrived, connection to the city',
   },
   boundaries: {
-    label: 'Boundaries & Comfort Level',
-    description: 'Creative limits, topic boundaries',
+    label: 'Boundaries & Comfort Levels',
+    description: 'Hard limits, soft limits, creative comfort zones',
   },
   pricing_structure: {
     label: 'Pricing Structure',
-    description: 'Menu items, offers, bundles',
+    description: 'PPV prices, subscriptions, bundles',
   },
   persona_character: {
     label: 'Persona & Character',
-    description: 'Identity, traits, energy, tone',
+    description: 'Persona name, traits, roleplay styles',
   },
   scripts_messaging: {
     label: 'Scripts & Messaging',
-    description: 'Writing tone, engagement hooks',
+    description: 'Message tone, selling strategy, flirting style',
   },
   content_preferences: {
     label: 'Content Preferences',
-    description: 'Themes, atmosphere, posting frequency',
+    description: 'Content types, posting frequency, energy level',
   },
   visual_identity: {
     label: 'Visual Identity',
-    description: 'Appearance style, visual brand cues',
+    description: 'Appearance keywords, wardrobe, photo style, colors',
   },
   creator_story: {
     label: 'Creator Story',
-    description: 'Background, origin, motivations',
+    description: 'Background, origin, ongoing narratives',
   },
-  audience_profile: {
-    label: 'Audience Profile',
-    description: 'Target demographics, community',
+  menu_items: {
+    label: 'Menu Items',
+    description: 'Individual content offerings with prices',
   },
-  posting_frequency: {
-    label: 'Posting Frequency',
-    description: 'Content schedule',
+  bundles: {
+    label: 'Bundles',
+    description: 'Packaged content deals',
   },
-  niche: {
-    label: 'Niche',
-    description: 'Content focus area',
+  loyal_fan_offers: {
+    label: 'Loyal Fan Offers',
+    description: 'Special rewards for top fans',
   },
-  tone_of_voice: {
-    label: 'Tone of Voice',
-    description: 'Communication style',
+  voice_preferences: {
+    label: 'Voice Preferences',
+    description: 'Tone, accent, speaking speed, emotional style',
   },
-  content_style: {
-    label: 'Content Style',
-    description: 'Style tags and approach',
+  media_uploads: {
+    label: 'Media Uploads',
+    description: 'Profile photos, moodboard images, reference videos',
+  },
+  of_strategy: {
+    label: 'OF Strategy',
+    description: 'Niche, target audience, engagement strategy',
   },
 };
 

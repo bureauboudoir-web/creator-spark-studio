@@ -14,116 +14,145 @@ export interface BBCreatorResponse {
   error: string | null;
 }
 
-// Personal Information Section
+// 1. Personal Information
 export interface BBPersonalInformation {
-  name?: string;
+  full_name?: string;
+  preferred_name?: string;
   age?: number;
-  location?: string;
-  short_bio?: string;
+  date_of_birth?: string;
   nationality?: string;
   languages?: string[];
+  location_city?: string;
+  location_country?: string;
+  bio?: string;
 }
 
-// Physical Description Section
+// 2. Physical Description
 export interface BBPhysicalDescription {
+  hair_color?: string;
+  hair_length?: string;
+  eye_color?: string;
   height?: string;
   body_type?: string;
-  hair_color?: string;
-  eye_color?: string;
+  tattoos?: string;
+  piercings?: string;
   distinguishing_features?: string[];
-  general_appearance?: string;
 }
 
-// Amsterdam Story Section (location-based narrative)
+// 3. Amsterdam Story
 export interface BBAmsterdamStory {
-  origin_story?: string;
-  neighborhood?: string;
-  local_context?: string;
-  city_connection?: string;
+  how_they_arrived?: string;
+  why_amsterdam?: string;
+  personal_background?: string;
+  connection_to_city?: string;
 }
 
-// Visual Identity Section
+// 4. Boundaries & Comfort Levels
+export interface BBBoundaries {
+  hard_limits?: string[];
+  soft_limits?: string[];
+  creative_comfort_zones?: string[];
+  content_rules?: string[];
+}
+
+// 5. Pricing Structure
+export interface BBPricingStructure {
+  ppv_price_range?: string;
+  custom_content_price?: string;
+  subscription_tiers?: string[];
+  bundle_prices?: Record<string, number>;
+  special_offer_logic?: string;
+}
+
+// 6. Persona & Character
+export interface BBPersonaCharacter {
+  persona_name?: string;
+  character_traits?: string[];
+  roleplay_styles?: string[];
+  communication_style?: string;
+}
+
+// 7. Scripts & Messaging Style
+export interface BBScriptsMessaging {
+  message_tone?: string;
+  selling_strategy?: string;
+  flirting_style?: string;
+  emotional_tone?: string;
+  high_converting_phrases?: string[];
+}
+
+// 8. Content Preferences
+export interface BBContentPreferences {
+  preferred_content_types?: string[];
+  banned_content_types?: string[];
+  posting_frequency?: string;
+  posting_time_preference?: string;
+  content_energy_level?: string;
+}
+
+// 9. Visual Identity
 export interface BBVisualIdentity {
-  appearance_style?: string;
-  visual_vibe?: string;
-  signature_look?: string;
-  unique_identifiers?: string[];
-  aesthetic_preferences?: string[];
+  appearance_keywords?: string[];
+  wardrobe_keywords?: string[];
+  photo_style?: string;
+  color_palettes?: string[];
+  branding_keywords?: string[];
 }
 
-// Creator Story Section
+// 10. Creator Story
 export interface BBCreatorStory {
   background_story?: string;
-  personality_background?: string;
-  brand_origin_story?: string;
-  lifestyle_themes?: string[];
-  motivations?: string[];
+  origin_story?: string;
+  ongoing_narrative_threads?: string[];
 }
 
-// Persona & Character Section
-export interface BBPersonaCharacter {
-  character_identity?: string;
-  personality_traits?: string[];
-  mood_energy?: string;
-  writing_style?: string;
-  emotional_style?: string;
-  audience_impression_goals?: string[];
+// 11. Menu Items
+export interface BBMenuItem {
+  title: string;
+  description: string;
+  price: number;
+}
+
+// 12. Bundles
+export interface BBBundle {
+  name: string;
+  items: string[];
+  price: number;
+}
+
+// 13. Loyal Fan Offers
+export interface BBLoyalFanOffer {
+  name: string;
+  benefit: string;
+  price: number;
+}
+
+// 14. Voice Preferences
+export interface BBVoicePreferences {
   tone_of_voice?: string;
+  accent?: string;
+  speaking_speed?: string;
+  emotional_style?: string;
 }
 
-// Scripts & Messaging Section
-export interface BBScriptsMessaging {
-  writing_tone?: string;
-  conversation_style?: string;
-  message_structure?: string;
-  emotional_angles?: string[];
-  storytelling_style?: string;
-  engagement_hooks?: string[];
-  fan_relationship_style?: string;
+// 15. Media Uploads
+export interface BBMediaUploads {
+  profile_photos?: string[];
+  moodboard_images?: string[];
+  reference_videos?: string[];
 }
 
-// Content Preferences Section
-export interface BBContentPreferences {
-  preferred_themes?: string[];
-  preferred_atmosphere?: string;
-  preferred_storyline_types?: string[];
-  preferred_visual_style?: string;
-  content_to_avoid?: string[];
-  content_strategy_preferences?: string[];
-  audience_type?: string;
-  posting_frequency?: string;
+// 16. OF Strategy Settings
+export interface BBOFStrategy {
+  niche?: string;
+  target_audience?: string;
+  competition_notes?: string;
+  engagement_strategy?: string;
+  upsell_strategy?: string;
 }
 
-// Pricing Structure Section
-export interface BBPricingStructure {
-  menu_item_names?: string[];
-  description_style?: string;
-  offer_types?: string[];
-  bundle_style?: string;
-  value_statements?: string[];
-  price_points?: Record<string, number>;
-}
-
-// Boundaries Section
-export interface BBBoundaries {
-  creative_limits?: string[];
-  content_comfort_zones?: string[];
-  communication_preferences?: string[];
-  acceptable_topic_boundaries?: string[];
-  hard_nos?: string[];
-}
-
-// Audience Profile Section
-export interface BBAudienceProfile {
-  target_demographics?: string[];
-  audience_interests?: string[];
-  engagement_style?: string;
-  community_tone?: string;
-}
-
-// Full BB Creator with ALL onboarding sections
+// Full BB Creator with ALL 16 onboarding sections
 export interface BBCreatorFull extends BBCreator {
-  // All 15 sections from BB exactly as stored
   personal_information?: BBPersonalInformation;
   physical_description?: BBPhysicalDescription;
   amsterdam_story?: BBAmsterdamStory;
@@ -134,20 +163,22 @@ export interface BBCreatorFull extends BBCreator {
   content_preferences?: BBContentPreferences;
   visual_identity?: BBVisualIdentity;
   creator_story?: BBCreatorStory;
-  audience_profile?: BBAudienceProfile;
-  
-  // Top-level convenience fields
-  posting_frequency?: string;
-  niche?: string;
-  tone_of_voice?: string;
-  content_style?: string[];
-  
-  // Metadata
-  voice_samples_available?: boolean;
-  
-  // Legacy fields (keep for backward compatibility, map from new fields)
-  personal_info?: BBPersonalInformation;
-  persona?: BBPersonaCharacter;
-  messaging?: BBScriptsMessaging;
-  pricing?: BBPricingStructure;
+  menu_items?: BBMenuItem[];
+  bundles?: BBBundle[];
+  loyal_fan_offers?: BBLoyalFanOffer[];
+  voice_preferences?: BBVoicePreferences;
+  media_uploads?: BBMediaUploads;
+  of_strategy?: BBOFStrategy;
+  onboarding_completion?: number;
+  onboarding_sections_completed?: string[];
+}
+
+// Preview type for list views
+export interface BBCreatorPreview {
+  creator_id: string;
+  name: string;
+  email: string;
+  profile_photo_url?: string;
+  creator_status: string;
+  onboarding_completion: number;
 }
