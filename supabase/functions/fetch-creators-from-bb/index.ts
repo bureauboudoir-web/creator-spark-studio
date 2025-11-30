@@ -50,8 +50,15 @@ Deno.serve(async (req) => {
     }
 
     // Call BB API to fetch creators using /external-creators endpoint
-    const bbApiUrl = `${settings.bb_api_url}/external-creators`;
-    console.log('Calling BB API:', bbApiUrl);
+    const baseUrl = settings.bb_api_url.endsWith('/') 
+      ? settings.bb_api_url.slice(0, -1) 
+      : settings.bb_api_url;
+    const bbApiUrl = `${baseUrl}/external-creators`;
+    
+    console.log('=== BB API Request ===');
+    console.log('Base URL:', baseUrl);
+    console.log('Full URL:', bbApiUrl);
+    console.log('API Key length:', settings.bb_api_key?.length || 0);
 
     const bbResponse = await fetch(bbApiUrl, {
       method: 'GET',
