@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
           data: {
             bb_api_url: data?.bb_api_url || '',
             bb_api_key: data?.bb_api_key ? '••••••••' : '',
-            mock_mode: data?.mock_mode ?? true,
+            mock_mode: data?.mock_mode ?? false,
           },
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

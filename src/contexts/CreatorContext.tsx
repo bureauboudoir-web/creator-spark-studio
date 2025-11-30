@@ -68,8 +68,8 @@ export const CreatorProvider = ({ children }: { children: ReactNode }) => {
       });
       
       if (!error && data?.data) {
-        const mockMode = data.data.mock_mode ?? true;
-        console.log('Global mockMode updated:', mockMode);
+        const mockMode = data.data.mock_mode === true;
+        console.log('mockMode initialized:', mockMode);
         setUsingMockDataState(mockMode);
         
         if (mockMode) {
