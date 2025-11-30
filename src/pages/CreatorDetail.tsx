@@ -355,6 +355,15 @@ const CreatorDetail = () => {
   };
 
   const handleSave = async () => {
+    if (usingMockData) {
+      toast({
+        title: "Mock Mode Active",
+        description: "Cannot save starter packs in mock mode. Configure BB API in Settings to enable.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!creator?.id) {
       toast({
         title: "Error",
@@ -399,6 +408,15 @@ const CreatorDetail = () => {
   };
 
   const handleSendToBB = async () => {
+    if (usingMockData) {
+      toast({
+        title: "Mock Mode Active",
+        description: "Cannot send to BB in mock mode. Configure BB API in Settings to enable.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!creator?.id) {
       toast({
         title: "Error",
@@ -950,7 +968,7 @@ const CreatorDetail = () => {
                       {/* Save button */}
                       <Button
                         onClick={handleSave}
-                        disabled={saving || !starterPack}
+                        disabled={usingMockData || saving || !starterPack}
                         className="flex-1 gap-2"
                         variant="secondary"
                       >
