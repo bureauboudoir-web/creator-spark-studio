@@ -13,11 +13,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { BBCreator, BBCreatorResponse } from '@/types/bb-creator';
 import { BBApiErrorBanner } from './BBApiErrorBanner';
+import { MOCK_CREATORS } from '@/mocks/mockCreators';
 
 export const CreatorSelector = () => {
   const [creators, setCreators] = useState<BBCreator[]>([]);
   const [loading, setLoading] = useState(true);
-  const { selectedCreator, setSelectedCreator, apiError, setApiError } = useCreatorContext();
+  const { selectedCreator, setSelectedCreator, apiError, setApiError, setUsingMockData } = useCreatorContext();
 
   useEffect(() => {
     fetchCreatorsFromBB();
@@ -32,19 +33,31 @@ export const CreatorSelector = () => {
         'fetch-creators-from-bb'
       );
 
-      if (error) {
-        console.error('Error calling fetch-creators-from-bb:', error);
-        setApiError('Failed to fetch creators from BB API');
+      if (error || !data?.success || !data?.data || data.data.length === 0) {
+        // BB API not configured or failed - use mock data
+        console.log('BB API not available, using mock data');
+        setUsingMockData(true);
+        
+        const mockBBCreators: BBCreator[] = MOCK_CREATORS.map((mock) => ({
+          creator_id: mock.id,
+          name: mock.name,
+          email: mock.email,
+          profile_photo_url: mock.avatarUrl,
+          creator_status: mock.status,
+        }));
+        
+        setCreators(mockBBCreators);
+        
+        // Auto-select first creator if none selected
+        if (!selectedCreator) {
+          setSelectedCreator(mockBBCreators[0]);
+        }
         return;
       }
 
-      if (!data?.success) {
-        console.error('BB API error:', data?.error);
-        setApiError(data?.error || 'Unknown error occurred');
-        return;
-      }
-
-      const fetchedCreators = data.data || [];
+      // BB API success - use real data
+      setUsingMockData(false);
+      const fetchedCreators = data.data;
       setCreators(fetchedCreators);
 
       // Auto-select first creator if none selected
@@ -53,7 +66,21 @@ export const CreatorSelector = () => {
       }
     } catch (err) {
       console.error('Unexpected error fetching creators:', err);
-      setApiError('Failed to fetch creators. Please try again.');
+      setUsingMockData(true);
+      
+      const mockBBCreators: BBCreator[] = MOCK_CREATORS.map((mock) => ({
+        creator_id: mock.id,
+        name: mock.name,
+        email: mock.email,
+        profile_photo_url: mock.avatarUrl,
+        creator_status: mock.status,
+      }));
+      
+      setCreators(mockBBCreators);
+      
+      if (!selectedCreator) {
+        setSelectedCreator(mockBBCreators[0]);
+      }
     } finally {
       setLoading(false);
     }

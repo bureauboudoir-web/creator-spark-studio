@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { Users, Search, Loader2, AlertCircle } from "lucide-react";
+import { MOCK_CREATORS } from "@/mocks/mockCreators";
+import { useCreatorContext } from "@/hooks/useCreatorContext";
 
 interface Creator {
   id: string;
@@ -19,40 +21,13 @@ interface Creator {
   onboarding_completed: boolean;
 }
 
-const MOCK_CREATORS: Creator[] = [
-  {
-    id: "mock-1",
-    user_id: "user-1",
-    email: "creator1@example.com",
-    full_name: "Alice Johnson",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alice",
-    onboarding_completed: true,
-  },
-  {
-    id: "mock-2",
-    user_id: "user-2",
-    email: "creator2@example.com",
-    full_name: "Bob Smith",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bob",
-    onboarding_completed: false,
-  },
-  {
-    id: "mock-3",
-    user_id: "user-3",
-    email: "creator3@example.com",
-    full_name: "Carol Williams",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Carol",
-    onboarding_completed: true,
-  },
-];
-
 const CreatorList = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { usingMockData, setUsingMockData } = useCreatorContext();
   const [loading, setLoading] = useState(true);
   const [creators, setCreators] = useState<Creator[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [usingMock, setUsingMock] = useState(false);
 
   useEffect(() => {
     loadCreators();
@@ -65,20 +40,21 @@ const CreatorList = () => {
         method: 'GET',
       });
 
-      if (error) throw error;
-
-      if (data.useMock) {
+      if (error || !data?.success || !data?.data) {
         // Use mock data
-        setUsingMock(true);
-        setCreators(MOCK_CREATORS);
-        toast({
-          title: "Using Mock Data",
-          description: "BB connection unavailable. Displaying sample creators.",
-          variant: "default",
-        });
-      } else if (data.success && data.data) {
+        setUsingMockData(true);
+        const mockCreators = MOCK_CREATORS.map((mock) => ({
+          id: mock.id,
+          user_id: mock.id,
+          email: mock.email,
+          full_name: mock.name,
+          avatar_url: mock.avatarUrl,
+          onboarding_completed: mock.status === 'completed',
+        }));
+        setCreators(mockCreators);
+      } else {
         // Use real data from BB
-        setUsingMock(false);
+        setUsingMockData(false);
         
         // Map BB data to our Creator interface
         const mappedCreators = data.data.map((creator: any) => ({
@@ -91,20 +67,19 @@ const CreatorList = () => {
         }));
         
         setCreators(mappedCreators);
-      } else {
-        // Fallback to mock
-        setUsingMock(true);
-        setCreators(MOCK_CREATORS);
       }
     } catch (error) {
       console.error('Error loading creators:', error);
-      setUsingMock(true);
-      setCreators(MOCK_CREATORS);
-      toast({
-        title: "Connection Error",
-        description: "Using mock creator data. Please check API settings.",
-        variant: "destructive",
-      });
+      setUsingMockData(true);
+      const mockCreators = MOCK_CREATORS.map((mock) => ({
+        id: mock.id,
+        user_id: mock.id,
+        email: mock.email,
+        full_name: mock.name,
+        avatar_url: mock.avatarUrl,
+        onboarding_completed: mock.status === 'completed',
+      }));
+      setCreators(mockCreators);
     } finally {
       setLoading(false);
     }
@@ -155,13 +130,13 @@ const CreatorList = () => {
           </div>
 
           {/* Mock Data Warning */}
-          {usingMock && (
+          {usingMockData && (
             <Card className="bg-amber-500/10 border-amber-500/20">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-500" />
                   <p className="text-sm text-amber-700 dark:text-amber-400">
-                    <strong>Using mock creator data</strong> - BB connection unavailable. Please check API settings.
+                    <strong>Using mock creator data</strong> – BB API not configured.
                   </p>
                 </div>
               </CardContent>

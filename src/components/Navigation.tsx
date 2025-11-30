@@ -9,12 +9,13 @@ import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { CreatorSelector } from "./staff/CreatorSelector";
 import { useCreatorContext } from "@/hooks/useCreatorContext";
+import { Badge } from "./ui/badge";
 
 export const Navigation = () => {
   const { signOut, user } = useAuth();
   const { isStaff } = useRole();
   const navigate = useNavigate();
-  const { selectedCreatorId } = useCreatorContext();
+  const { selectedCreatorId, usingMockData } = useCreatorContext();
 
   const links = [
     { to: "/dashboard", label: "Dashboard", icon: Home, roles: null },
@@ -47,6 +48,18 @@ export const Navigation = () => {
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Content Generator
             </span>
+            
+            {isStaff && (
+              <Badge 
+                variant={usingMockData ? "outline" : "default"}
+                className={usingMockData 
+                  ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300 dark:border-amber-700" 
+                  : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-300 dark:border-green-700"
+                }
+              >
+                {usingMockData ? "Mock Mode" : "Connected to BB"}
+              </Badge>
+            )}
             
             <RoleGuard staffOnly>
               <div className="ml-4">

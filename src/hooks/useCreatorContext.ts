@@ -7,6 +7,8 @@ interface CreatorContextValue {
   setSelectedCreator: (creator: BBCreator | null) => void;
   apiError: string | null;
   setApiError: (error: string | null) => void;
+  usingMockData: boolean;
+  setUsingMockData: (value: boolean) => void;
 }
 
 export const useCreatorContext = (): CreatorContextValue => {
@@ -16,6 +18,7 @@ export const useCreatorContext = (): CreatorContextValue => {
   });
 
   const [apiError, setApiError] = useState<string | null>(null);
+  const [usingMockData, setUsingMockData] = useState<boolean>(false);
 
   useEffect(() => {
     if (selectedCreator) {
@@ -36,5 +39,7 @@ export const useCreatorContext = (): CreatorContextValue => {
     setSelectedCreator,
     apiError,
     setApiError,
+    usingMockData,
+    setUsingMockData,
   };
 };
