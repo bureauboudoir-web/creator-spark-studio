@@ -52,39 +52,50 @@ export const CreatorMetadataCard = ({ creator }: CreatorMetadataCardProps) => {
         </div>
 
         {/* Personal Info */}
-        {creator.personal_info && (
+        {(creator.personal_information || creator.personal_info) && (
           <div className="space-y-2 pt-2 border-t">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Target className="w-4 h-4" />
               <span>Personal Information</span>
             </div>
             <div className="pl-6 space-y-1 text-sm text-muted-foreground">
-              {creator.personal_info.age && <p>Age: {creator.personal_info.age}</p>}
-              {creator.personal_info.location && (
+              {(creator.personal_information?.age || creator.personal_info?.age) && 
+                <p>Age: {creator.personal_information?.age || creator.personal_info?.age}</p>
+              }
+              {(creator.personal_information?.location || creator.personal_info?.location) && (
                 <div className="flex items-center gap-1">
                   <MapPin className="w-3 h-3" />
-                  <span>{creator.personal_info.location}</span>
+                  <span>{creator.personal_information?.location || creator.personal_info?.location}</span>
                 </div>
               )}
-              {creator.personal_info.short_bio && <p className="italic">"{creator.personal_info.short_bio}"</p>}
+              {(creator.personal_information?.short_bio || creator.personal_info?.short_bio) && 
+                <p className="italic">"{creator.personal_information?.short_bio || creator.personal_info?.short_bio}"</p>
+              }
             </div>
           </div>
         )}
 
         {/* Persona & Character */}
-        {creator.persona && (
+        {(creator.persona_character || creator.persona) && (
           <div className="space-y-2 pt-2 border-t">
             <div className="flex items-center gap-2 text-sm font-medium">
               <TrendingUp className="w-4 h-4" />
               <span>Persona & Character</span>
             </div>
             <div className="pl-6 space-y-1 text-sm text-muted-foreground">
-              {creator.persona.character_identity && <p><strong>Identity:</strong> {creator.persona.character_identity}</p>}
-              {creator.persona.tone_of_voice && <p><strong>Tone:</strong> {creator.persona.tone_of_voice}</p>}
-              {creator.persona.mood_energy && <p><strong>Energy:</strong> {creator.persona.mood_energy}</p>}
-              {creator.persona.personality_traits && creator.persona.personality_traits.length > 0 && (
+              {(creator.persona_character?.character_identity || creator.persona?.character_identity) && 
+                <p><strong>Identity:</strong> {creator.persona_character?.character_identity || creator.persona?.character_identity}</p>
+              }
+              {(creator.tone_of_voice || creator.persona_character?.tone_of_voice || creator.persona?.tone_of_voice) && 
+                <p><strong>Tone:</strong> {creator.tone_of_voice || creator.persona_character?.tone_of_voice || creator.persona?.tone_of_voice}</p>
+              }
+              {(creator.persona_character?.mood_energy || creator.persona?.mood_energy) && 
+                <p><strong>Energy:</strong> {creator.persona_character?.mood_energy || creator.persona?.mood_energy}</p>
+              }
+              {(creator.persona_character?.personality_traits || creator.persona?.personality_traits) && 
+               (creator.persona_character?.personality_traits || creator.persona?.personality_traits || []).length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {creator.persona.personality_traits.slice(0, 4).map((trait, idx) => (
+                  {(creator.persona_character?.personality_traits || creator.persona?.personality_traits || []).slice(0, 4).map((trait, idx) => (
                     <Badge key={idx} variant="secondary" className="text-xs">{trait}</Badge>
                   ))}
                 </div>
@@ -94,7 +105,7 @@ export const CreatorMetadataCard = ({ creator }: CreatorMetadataCardProps) => {
         )}
 
         {/* Creator Story */}
-        {creator.creator_story && creator.creator_story.brand_origin_story && (
+        {creator.creator_story?.brand_origin_story && (
           <div className="space-y-2 pt-2 border-t">
             <div className="flex items-center gap-2 text-sm font-medium">
               <BookOpen className="w-4 h-4" />
@@ -121,15 +132,19 @@ export const CreatorMetadataCard = ({ creator }: CreatorMetadataCardProps) => {
         )}
 
         {/* Messaging Style */}
-        {creator.messaging && (
+        {(creator.scripts_messaging || creator.messaging) && (
           <div className="space-y-2 pt-2 border-t">
             <div className="flex items-center gap-2 text-sm font-medium">
               <MessageSquare className="w-4 h-4" />
               <span>Messaging Style</span>
             </div>
             <div className="pl-6 space-y-1 text-sm text-muted-foreground">
-              {creator.messaging.conversation_style && <p><strong>Style:</strong> {creator.messaging.conversation_style}</p>}
-              {creator.messaging.storytelling_style && <p><strong>Storytelling:</strong> {creator.messaging.storytelling_style}</p>}
+              {(creator.scripts_messaging?.conversation_style || creator.messaging?.conversation_style) && 
+                <p><strong>Style:</strong> {creator.scripts_messaging?.conversation_style || creator.messaging?.conversation_style}</p>
+              }
+              {(creator.scripts_messaging?.storytelling_style || creator.messaging?.storytelling_style) && 
+                <p><strong>Storytelling:</strong> {creator.scripts_messaging?.storytelling_style || creator.messaging?.storytelling_style}</p>
+              }
             </div>
           </div>
         )}
@@ -142,8 +157,8 @@ export const CreatorMetadataCard = ({ creator }: CreatorMetadataCardProps) => {
               <span>Content Preferences</span>
             </div>
             <div className="pl-6 space-y-1 text-sm text-muted-foreground">
-              {creator.content_preferences.posting_frequency && (
-                <p><strong>Posting:</strong> {creator.content_preferences.posting_frequency}</p>
+              {(creator.posting_frequency || creator.content_preferences.posting_frequency) && (
+                <p><strong>Posting:</strong> {creator.posting_frequency || creator.content_preferences.posting_frequency}</p>
               )}
               {creator.content_preferences.preferred_atmosphere && (
                 <p><strong>Atmosphere:</strong> {creator.content_preferences.preferred_atmosphere}</p>
@@ -156,15 +171,19 @@ export const CreatorMetadataCard = ({ creator }: CreatorMetadataCardProps) => {
         )}
 
         {/* Pricing Structure */}
-        {creator.pricing && creator.pricing.menu_item_names && creator.pricing.menu_item_names.length > 0 && (
+        {(creator.pricing_structure || creator.pricing) && 
+         (creator.pricing_structure?.menu_item_names || creator.pricing?.menu_item_names) && 
+         (creator.pricing_structure?.menu_item_names || creator.pricing?.menu_item_names || []).length > 0 && (
           <div className="space-y-2 pt-2 border-t">
             <div className="flex items-center gap-2 text-sm font-medium">
               <DollarSign className="w-4 h-4" />
               <span>Pricing Structure</span>
             </div>
             <div className="pl-6 space-y-1 text-sm text-muted-foreground">
-              <p><strong>Menu Items:</strong> {creator.pricing.menu_item_names.slice(0, 3).join(', ')}</p>
-              {creator.pricing.bundle_style && <p><strong>Bundle Style:</strong> {creator.pricing.bundle_style}</p>}
+              <p><strong>Menu Items:</strong> {(creator.pricing_structure?.menu_item_names || creator.pricing?.menu_item_names || []).slice(0, 3).join(', ')}</p>
+              {(creator.pricing_structure?.bundle_style || creator.pricing?.bundle_style) && 
+                <p><strong>Bundle Style:</strong> {creator.pricing_structure?.bundle_style || creator.pricing?.bundle_style}</p>
+              }
             </div>
           </div>
         )}

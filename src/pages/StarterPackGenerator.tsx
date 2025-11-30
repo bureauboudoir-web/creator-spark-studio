@@ -175,7 +175,7 @@ export default function StarterPackGenerator() {
                   <span className="font-medium">30 Conversation Starters</span>
                 </div>
                 <p className="text-xs text-muted-foreground pl-6">
-                  Based on {creatorData.persona?.tone_of_voice || 'personality'}, {creatorData.messaging?.fan_relationship_style || 'messaging style'}, and engagement hooks
+                  Based on {creatorData.tone_of_voice || creatorData.persona_character?.tone_of_voice || creatorData.persona?.tone_of_voice || 'personality'}, {creatorData.scripts_messaging?.fan_relationship_style || creatorData.messaging?.fan_relationship_style || 'messaging style'}, and engagement hooks
                 </p>
               </div>
 
@@ -192,7 +192,7 @@ export default function StarterPackGenerator() {
                 <span className="font-medium">20 Feed Captions</span>
               </div>
               <p className="text-xs text-muted-foreground pl-6">
-                Reflecting {creatorData.persona?.character_identity || 'personality'} and {creatorData.content_preferences?.preferred_atmosphere || 'content style'}
+                Reflecting {creatorData.persona_character?.character_identity || creatorData.persona?.character_identity || 'personality'} and {creatorData.content_preferences?.preferred_atmosphere || 'content style'}
               </p>
 
               <div className="flex items-center gap-2 text-sm">
@@ -208,7 +208,7 @@ export default function StarterPackGenerator() {
                 <span className="font-medium">Menu & Upsell Copy</span>
               </div>
               <p className="text-xs text-muted-foreground pl-6">
-                Showcasing {creatorData.pricing?.menu_item_names?.length || 0} menu items with {creatorData.pricing?.bundle_style || 'bundle'} offers
+                Showcasing {(creatorData.pricing_structure?.menu_item_names || creatorData.pricing?.menu_item_names || []).length} menu items with {creatorData.pricing_structure?.bundle_style || creatorData.pricing?.bundle_style || 'bundle'} offers
               </p>
             </CardContent>
           </Card>
@@ -259,7 +259,7 @@ export default function StarterPackGenerator() {
 
               {!onboardingComplete && !usingMockData && (
                 <p className="text-xs text-center text-muted-foreground mt-3">
-                  All 8 onboarding sections must be complete in BB before generating content
+                  All 15 onboarding sections must be complete in BB before generating content
                 </p>
               )}
             </CardContent>
