@@ -17,8 +17,15 @@ interface CreatorContextValue {
 
 export const useCreatorContext = (): CreatorContextValue => {
   const [selectedCreator, setSelectedCreatorState] = useState<BBCreator | null>(() => {
-    const stored = localStorage.getItem('bb_selected_creator');
-    return stored ? JSON.parse(stored) : null;
+    try {
+      const stored = localStorage.getItem('bb_selected_creator');
+      if (!stored) return null;
+      return JSON.parse(stored);
+    } catch (error) {
+      console.error('Failed to parse stored creator data, clearing corrupted data:', error);
+      localStorage.removeItem('bb_selected_creator');
+      return null;
+    }
   });
 
   const [apiError, setApiError] = useState<string | null>(null);
