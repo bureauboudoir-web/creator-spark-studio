@@ -11,16 +11,10 @@ import { useCreatorContext } from "@/contexts/CreatorContext";
 import { Key, Eye, EyeOff, Loader2, Bug } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
-// Sanitize API key: trim whitespace, remove non-ASCII and hidden characters
+// Sanitize API key: only trim whitespace, preserve all characters
 const sanitizeApiKey = (key: string): string => {
   if (!key) return '';
-  
-  // Remove non-ASCII characters (keeps only printable ASCII 32-126)
-  // This removes non-breaking spaces, zero-width chars, Unicode artifacts
-  const asciiOnly = key.replace(/[^\x20-\x7E]/g, '');
-  
-  // Trim whitespace from both ends
-  return asciiOnly.trim();
+  return key.trim();
 };
 
 // Sanitize URL: trim whitespace, remove invisible chars, fix double slashes
@@ -103,17 +97,19 @@ const ApiSettings = () => {
         mock_mode: settings.mock_mode,
       };
       
-      // Sanitize and include API key if it was modified
+      // Include API key if it was modified
       if (apiKeyModified) {
         const rawKey = settings.bb_api_key;
-        const sanitizedKey = sanitizeApiKey(rawKey);
         
-        // Debug logging - show raw and sanitized values
-        console.log('apiKeyField raw:', JSON.stringify(rawKey));
-        console.log('apiKeyField sanitized:', JSON.stringify(sanitizedKey), `(${sanitizedKey.length} chars)`);
-        
-        // Always include the sanitized key (even if empty string)
-        payload.bb_api_key = sanitizedKey;
+        // Skip if user hasn't actually changed from masked display
+        if (rawKey === '••••••••') {
+          console.log('⏭️ Skipping API key - masked placeholder detected');
+        } else {
+          // Only trim whitespace, store everything else as-is
+          const trimmedKey = rawKey.trim();
+          payload.bb_api_key = trimmedKey;
+          console.log('✅ Storing API key:', `${trimmedKey.length} chars`);
+        }
       }
       
       // Debug logging
@@ -263,7 +259,7 @@ const ApiSettings = () => {
         }
       } else {
         // Safe to do direct fetch with real API key
-        const sanitizedKey = sanitizeApiKey(settings.bb_api_key);
+        const rawKey = settings.bb_api_key.trim();
         const sanitizedUrl = sanitizeUrl(settings.bb_api_url);
         
         const baseUrl = sanitizedUrl.endsWith('/') 
@@ -273,14 +269,14 @@ const ApiSettings = () => {
         
         console.log('📤 Request URL:', statusEndpoint);
         console.log('📤 Sanitized URL:', sanitizedUrl);
-        console.log('📤 Sanitized API Key length:', sanitizedKey.length);
+        console.log('📤 API Key length:', rawKey.length);
         console.log('📤 Authorization: Bearer [API_KEY]');
         
         try {
           const response = await fetch(statusEndpoint, {
             method: 'GET',
             headers: {
-              'Authorization': `Bearer ${sanitizedKey}`,
+              'Authorization': `Bearer ${rawKey}`,
               'Content-Type': 'application/json',
             },
           });
@@ -314,10 +310,14 @@ const ApiSettings = () => {
       // ===== TEST E: Test save function =====
       console.group('💾 Test E: Save Settings Test');
       
-      // Log API key sanitization
-      console.log('apiKeyField raw:', JSON.stringify(settings.bb_api_key));
-      const sanitizedDebugKey = sanitizeApiKey(settings.bb_api_key);
-      console.log('apiKeyField sanitized:', JSON.stringify(sanitizedDebugKey), `(${sanitizedDebugKey.length} chars)`);
+      // Log API key validation
+      const rawKey = settings.bb_api_key;
+      const trimmedKey = rawKey.trim();
+      const isValid = trimmedKey.length > 0 && trimmedKey !== '••••••••';
+      
+      console.log('apiKeyField raw:', JSON.stringify(rawKey));
+      console.log('apiKeyField trimmed:', JSON.stringify(trimmedKey), `(${trimmedKey.length} chars)`);
+      console.log('apiKeyField valid:', isValid);
       
       const testSettings = {
         ...settings,
