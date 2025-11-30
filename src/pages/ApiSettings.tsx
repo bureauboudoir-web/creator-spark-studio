@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { useAuth } from "@/hooks/useAuth";
-import { Key, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Key, Eye, EyeOff, Loader2, Bug } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 const ApiSettings = () => {
@@ -16,6 +16,7 @@ const ApiSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [debugging, setDebugging] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   const [settings, setSettings] = useState({
     bb_api_url: "",
@@ -124,6 +125,136 @@ const ApiSettings = () => {
       });
     } finally {
       setTesting(false);
+    }
+  };
+
+  const handleDebugBBAPI = async () => {
+    setDebugging(true);
+    console.group('🔧 BB API Debug Tests');
+    console.log('Starting BB API configuration tests at:', new Date().toISOString());
+    
+    try {
+      // ===== TEST A: Log current settings from the database =====
+      console.group('📋 Test A: Loading Settings from Database');
+      const { data: settingsResponse, error: settingsError } = await supabase.functions.invoke('manage-api-settings', {
+        method: 'GET',
+      });
+      
+      if (settingsError) {
+        console.error('❌ Failed to load settings:', settingsError);
+      } else {
+        console.log('✅ Settings loaded successfully:');
+        console.table({
+          bb_api_url: settingsResponse?.data?.bb_api_url || '(not set)',
+          bb_api_key: settingsResponse?.data?.bb_api_key || '(not set)',
+          mock_mode: settingsResponse?.data?.mock_mode,
+        });
+      }
+      console.groupEnd();
+      
+      // ===== TEST B: Validate URL format (trailing slash check) =====
+      console.group('🔗 Test B: URL Validation');
+      const currentUrl = settings.bb_api_url;
+      if (!currentUrl) {
+        console.warn('⚠️ WARNING: bb_api_url is empty or not set');
+      } else if (!currentUrl.endsWith('/')) {
+        console.warn('⚠️ WARNING: bb_api_url does NOT end with a trailing slash');
+        console.warn('   Current URL:', currentUrl);
+        console.warn('   Recommended:', currentUrl + '/');
+      } else {
+        console.log('✅ bb_api_url ends with trailing slash:', currentUrl);
+      }
+      console.groupEnd();
+      
+      // ===== TEST C: Direct fetch to external-api-status endpoint =====
+      console.group('🌐 Test C: Direct Fetch to BB external-api-status');
+      if (!settings.bb_api_url || !settings.bb_api_key) {
+        console.warn('⚠️ Skipping API test - URL or API key not configured');
+      } else {
+        // Build the URL - handle trailing slash
+        const baseUrl = settings.bb_api_url.endsWith('/') 
+          ? settings.bb_api_url 
+          : settings.bb_api_url + '/';
+        const statusEndpoint = `${baseUrl}external-api-status`;
+        
+        console.log('📤 Request URL:', statusEndpoint);
+        console.log('📤 Authorization: Bearer [API_KEY]');
+        
+        try {
+          const response = await fetch(statusEndpoint, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${settings.bb_api_key}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          // ===== TEST D: Print full response =====
+          console.group('📥 Test D: Full Response');
+          console.log('Status Code:', response.status);
+          console.log('Status Text:', response.statusText);
+          console.log('Headers:', Object.fromEntries(response.headers.entries()));
+          
+          const responseText = await response.text();
+          try {
+            const responseJson = JSON.parse(responseText);
+            console.log('✅ Response Body (JSON):', responseJson);
+          } catch {
+            console.log('📄 Response Body (Text):', responseText);
+          }
+          console.groupEnd();
+          
+        } catch (fetchError) {
+          console.error('❌ Fetch Error:', fetchError);
+          console.error('   This could be due to CORS, network issues, or invalid URL');
+        }
+      }
+      console.groupEnd();
+      
+      // ===== TEST E: Test save function =====
+      console.group('💾 Test E: Save Settings Test');
+      const testSettings = {
+        ...settings,
+        mock_mode: !settings.mock_mode, // Toggle mock_mode
+      };
+      console.log('📤 Attempting to save with mock_mode toggled to:', testSettings.mock_mode);
+      
+      const { data: saveResponse, error: saveError } = await supabase.functions.invoke('manage-api-settings', {
+        method: 'POST',
+        body: testSettings,
+      });
+      
+      if (saveError) {
+        console.error('❌ Save failed:', saveError);
+      } else {
+        console.log('✅ Save successful:', saveResponse);
+      }
+      
+      // Restore original mock_mode
+      console.log('🔄 Restoring original mock_mode to:', settings.mock_mode);
+      const { data: restoreResponse, error: restoreError } = await supabase.functions.invoke('manage-api-settings', {
+        method: 'POST',
+        body: settings,
+      });
+      
+      if (restoreError) {
+        console.error('❌ Restore failed:', restoreError);
+      } else {
+        console.log('✅ Settings restored to original values');
+      }
+      console.groupEnd();
+      
+    } catch (error) {
+      console.error('💥 Unexpected error during debug tests:', error);
+    } finally {
+      console.log('Debug tests completed at:', new Date().toISOString());
+      console.groupEnd();
+      setDebugging(false);
+      
+      toast({
+        title: "Debug Tests Complete",
+        description: "Check browser console (F12) for detailed results",
+      });
     }
   };
 
@@ -271,6 +402,39 @@ const ApiSettings = () => {
                   </div>
                 </>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Debug Tools Card - Temporary for testing */}
+          <Card className="border-amber-500/50 bg-amber-500/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-amber-600">
+                <Bug className="w-5 h-5" />
+                Debug Tools (Admin Only)
+              </CardTitle>
+              <CardDescription>
+                Temporary debugging tools for BB API configuration testing
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                onClick={handleDebugBBAPI}
+                disabled={debugging}
+                className="border-amber-500 text-amber-600 hover:bg-amber-500/10"
+              >
+                {debugging ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Running Debug Tests...
+                  </>
+                ) : (
+                  <>
+                    <Bug className="w-4 h-4 mr-2" />
+                    Debug BB API
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
 
