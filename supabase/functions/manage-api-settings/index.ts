@@ -96,11 +96,17 @@ Deno.serve(async (req) => {
         const updateData: any = { updated_at: new Date().toISOString() };
         if (bb_api_url !== undefined) updateData.bb_api_url = bb_api_url;
         
-        // Update API key if provided (including empty string to clear it)
-        // Skip ONLY if it's undefined (not sent) or the masked placeholder
+        // Update API key if provided - with validation
         if (bb_api_key !== undefined && bb_api_key !== '••••••••') {
-          updateData.bb_api_key = bb_api_key;
-          console.log('📝 Updating bb_api_key (length:', bb_api_key.length, 'chars)');
+          const trimmedKey = bb_api_key.trim();
+          
+          // Reject if empty or just dots
+          if (!trimmedKey || /^[•]+$/.test(trimmedKey)) {
+            console.warn('⚠️ Rejecting empty/masked API key');
+          } else {
+            updateData.bb_api_key = trimmedKey;
+            console.log('📝 Saving bb_api_key:', trimmedKey.length, 'chars, starts with:', trimmedKey.substring(0, 3));
+          }
         } else {
           console.log('⏭️ Skipping bb_api_key update (not provided or masked placeholder)');
         }
