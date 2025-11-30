@@ -75,45 +75,99 @@ export type Database = {
       }
       creators: {
         Row: {
+          amsterdam_story: Json | null
+          boundaries: Json | null
+          bundles: Json | null
+          content_preferences: Json | null
           created_at: string | null
+          creator_story: Json | null
           id: string
           id_upload_status: string | null
           id_upload_url: string | null
           instagram: string | null
+          loyal_fan_offers: Json | null
+          media_uploads: Json | null
+          menu_items: Json | null
+          of_strategy: Json | null
+          onboarding_completion: number | null
+          onboarding_sections_completed: string[] | null
+          persona_character: Json | null
           persona_description: string | null
+          personal_information: Json | null
+          physical_description: Json | null
+          pricing_structure: Json | null
           sample_images: string[] | null
+          scripts_messaging: Json | null
           tiktok: string | null
           twitter: string | null
           updated_at: string | null
           user_id: string
+          visual_identity: Json | null
+          voice_preferences: Json | null
           youtube: string | null
         }
         Insert: {
+          amsterdam_story?: Json | null
+          boundaries?: Json | null
+          bundles?: Json | null
+          content_preferences?: Json | null
           created_at?: string | null
+          creator_story?: Json | null
           id?: string
           id_upload_status?: string | null
           id_upload_url?: string | null
           instagram?: string | null
+          loyal_fan_offers?: Json | null
+          media_uploads?: Json | null
+          menu_items?: Json | null
+          of_strategy?: Json | null
+          onboarding_completion?: number | null
+          onboarding_sections_completed?: string[] | null
+          persona_character?: Json | null
           persona_description?: string | null
+          personal_information?: Json | null
+          physical_description?: Json | null
+          pricing_structure?: Json | null
           sample_images?: string[] | null
+          scripts_messaging?: Json | null
           tiktok?: string | null
           twitter?: string | null
           updated_at?: string | null
           user_id: string
+          visual_identity?: Json | null
+          voice_preferences?: Json | null
           youtube?: string | null
         }
         Update: {
+          amsterdam_story?: Json | null
+          boundaries?: Json | null
+          bundles?: Json | null
+          content_preferences?: Json | null
           created_at?: string | null
+          creator_story?: Json | null
           id?: string
           id_upload_status?: string | null
           id_upload_url?: string | null
           instagram?: string | null
+          loyal_fan_offers?: Json | null
+          media_uploads?: Json | null
+          menu_items?: Json | null
+          of_strategy?: Json | null
+          onboarding_completion?: number | null
+          onboarding_sections_completed?: string[] | null
+          persona_character?: Json | null
           persona_description?: string | null
+          personal_information?: Json | null
+          physical_description?: Json | null
+          pricing_structure?: Json | null
           sample_images?: string[] | null
+          scripts_messaging?: Json | null
           tiktok?: string | null
           twitter?: string | null
           updated_at?: string | null
           user_id?: string
+          visual_identity?: Json | null
+          voice_preferences?: Json | null
           youtube?: string | null
         }
         Relationships: [

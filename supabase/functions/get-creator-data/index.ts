@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check if user is staff (serviceClient already created above)
+    // Check if user is staff
     const { data: roleData, error: roleError } = await serviceClient
       .from('user_roles')
       .select('role')
@@ -111,10 +111,9 @@ Deno.serve(async (req) => {
     const creatorData = await bbResponse.json();
     console.log('BB API response received for creator:', creatorId);
 
-    // Parse and structure the full onboarding data - check all 15 sections
+    // Calculate onboarding completion for all 16 sections
     const sectionsCompleted: string[] = [];
     
-    // Check each section for completion
     if (creatorData.personal_information && Object.keys(creatorData.personal_information).length > 0) {
       sectionsCompleted.push('personal_information');
     }
@@ -145,26 +144,28 @@ Deno.serve(async (req) => {
     if (creatorData.creator_story && Object.keys(creatorData.creator_story).length > 0) {
       sectionsCompleted.push('creator_story');
     }
-    if (creatorData.audience_profile && Object.keys(creatorData.audience_profile).length > 0) {
-      sectionsCompleted.push('audience_profile');
+    if (creatorData.menu_items && creatorData.menu_items.length > 0) {
+      sectionsCompleted.push('menu_items');
     }
-    if (creatorData.posting_frequency) {
-      sectionsCompleted.push('posting_frequency');
+    if (creatorData.bundles && creatorData.bundles.length > 0) {
+      sectionsCompleted.push('bundles');
     }
-    if (creatorData.niche) {
-      sectionsCompleted.push('niche');
+    if (creatorData.loyal_fan_offers && creatorData.loyal_fan_offers.length > 0) {
+      sectionsCompleted.push('loyal_fan_offers');
     }
-    if (creatorData.tone_of_voice) {
-      sectionsCompleted.push('tone_of_voice');
+    if (creatorData.voice_preferences && Object.keys(creatorData.voice_preferences).length > 0) {
+      sectionsCompleted.push('voice_preferences');
     }
-    if (creatorData.content_style && creatorData.content_style.length > 0) {
-      sectionsCompleted.push('content_style');
+    if (creatorData.media_uploads && Object.keys(creatorData.media_uploads).length > 0) {
+      sectionsCompleted.push('media_uploads');
+    }
+    if (creatorData.of_strategy && Object.keys(creatorData.of_strategy).length > 0) {
+      sectionsCompleted.push('of_strategy');
     }
 
-    // Calculate completion percentage based on 15 sections
-    const onboarding_completion = Math.round((sectionsCompleted.length / 15) * 100);
+    const onboardingCompletion = Math.round((sectionsCompleted.length / 16) * 100);
 
-    // Pass through ALL BB data exactly as stored
+    // Build the response with all 16 BB onboarding sections
     const fullCreatorData = {
       creator_id: creatorData.creator_id || creatorId,
       name: creatorData.name,
@@ -172,7 +173,7 @@ Deno.serve(async (req) => {
       profile_photo_url: creatorData.profile_photo_url || null,
       creator_status: creatorData.creator_status || 'active',
       
-      // All 15 sections - pass through exactly as stored (null if missing, not empty objects)
+      // All 16 sections - pass through exactly as stored
       personal_information: creatorData.personal_information || null,
       physical_description: creatorData.physical_description || null,
       amsterdam_story: creatorData.amsterdam_story || null,
@@ -183,24 +184,16 @@ Deno.serve(async (req) => {
       content_preferences: creatorData.content_preferences || null,
       visual_identity: creatorData.visual_identity || null,
       creator_story: creatorData.creator_story || null,
-      audience_profile: creatorData.audience_profile || null,
-      
-      // Top-level fields
-      posting_frequency: creatorData.posting_frequency || null,
-      niche: creatorData.niche || null,
-      tone_of_voice: creatorData.tone_of_voice || null,
-      content_style: creatorData.content_style || [],
+      menu_items: creatorData.menu_items || [],
+      bundles: creatorData.bundles || [],
+      loyal_fan_offers: creatorData.loyal_fan_offers || [],
+      voice_preferences: creatorData.voice_preferences || null,
+      media_uploads: creatorData.media_uploads || null,
+      of_strategy: creatorData.of_strategy || null,
       
       // Metadata
-      voice_samples_available: creatorData.voice_samples_available || false,
-      onboarding_completion,
+      onboarding_completion: onboardingCompletion,
       onboarding_sections_completed: sectionsCompleted,
-      
-      // Legacy mappings for backward compatibility
-      personal_info: creatorData.personal_information || creatorData.personal_info || null,
-      persona: creatorData.persona_character || creatorData.persona || null,
-      messaging: creatorData.scripts_messaging || creatorData.messaging || null,
-      pricing: creatorData.pricing_structure || creatorData.pricing || null,
     };
 
     return new Response(JSON.stringify({ 

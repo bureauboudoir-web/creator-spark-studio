@@ -52,50 +52,50 @@ export const CreatorMetadataCard = ({ creator }: CreatorMetadataCardProps) => {
         </div>
 
         {/* Personal Info */}
-        {(creator.personal_information || creator.personal_info) && (
+        {creator.personal_information && (
           <div className="space-y-2 pt-2 border-t">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Target className="w-4 h-4" />
               <span>Personal Information</span>
             </div>
             <div className="pl-6 space-y-1 text-sm text-muted-foreground">
-              {(creator.personal_information?.age || creator.personal_info?.age) && 
-                <p>Age: {creator.personal_information?.age || creator.personal_info?.age}</p>
+              {creator.personal_information.age && 
+                <p>Age: {creator.personal_information.age}</p>
               }
-              {(creator.personal_information?.location || creator.personal_info?.location) && (
+              {(creator.personal_information.location_city || creator.personal_information.location_country) && (
                 <div className="flex items-center gap-1">
                   <MapPin className="w-3 h-3" />
-                  <span>{creator.personal_information?.location || creator.personal_info?.location}</span>
+                  <span>
+                    {[creator.personal_information.location_city, creator.personal_information.location_country]
+                      .filter(Boolean).join(', ')}
+                  </span>
                 </div>
               )}
-              {(creator.personal_information?.short_bio || creator.personal_info?.short_bio) && 
-                <p className="italic">"{creator.personal_information?.short_bio || creator.personal_info?.short_bio}"</p>
+              {creator.personal_information.bio && 
+                <p className="italic">"{creator.personal_information.bio}"</p>
               }
             </div>
           </div>
         )}
 
         {/* Persona & Character */}
-        {(creator.persona_character || creator.persona) && (
+        {creator.persona_character && (
           <div className="space-y-2 pt-2 border-t">
             <div className="flex items-center gap-2 text-sm font-medium">
               <TrendingUp className="w-4 h-4" />
               <span>Persona & Character</span>
             </div>
             <div className="pl-6 space-y-1 text-sm text-muted-foreground">
-              {(creator.persona_character?.character_identity || creator.persona?.character_identity) && 
-                <p><strong>Identity:</strong> {creator.persona_character?.character_identity || creator.persona?.character_identity}</p>
+              {creator.persona_character.persona_name && 
+                <p><strong>Persona:</strong> {creator.persona_character.persona_name}</p>
               }
-              {(creator.tone_of_voice || creator.persona_character?.tone_of_voice || creator.persona?.tone_of_voice) && 
-                <p><strong>Tone:</strong> {creator.tone_of_voice || creator.persona_character?.tone_of_voice || creator.persona?.tone_of_voice}</p>
+              {creator.persona_character.communication_style && 
+                <p><strong>Style:</strong> {creator.persona_character.communication_style}</p>
               }
-              {(creator.persona_character?.mood_energy || creator.persona?.mood_energy) && 
-                <p><strong>Energy:</strong> {creator.persona_character?.mood_energy || creator.persona?.mood_energy}</p>
-              }
-              {(creator.persona_character?.personality_traits || creator.persona?.personality_traits) && 
-               (creator.persona_character?.personality_traits || creator.persona?.personality_traits || []).length > 0 && (
+              {creator.persona_character.character_traits && 
+               creator.persona_character.character_traits.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {(creator.persona_character?.personality_traits || creator.persona?.personality_traits || []).slice(0, 4).map((trait, idx) => (
+                  {creator.persona_character.character_traits.slice(0, 4).map((trait, idx) => (
                     <Badge key={idx} variant="secondary" className="text-xs">{trait}</Badge>
                   ))}
                 </div>
@@ -105,14 +105,14 @@ export const CreatorMetadataCard = ({ creator }: CreatorMetadataCardProps) => {
         )}
 
         {/* Creator Story */}
-        {creator.creator_story?.brand_origin_story && (
+        {creator.creator_story?.origin_story && (
           <div className="space-y-2 pt-2 border-t">
             <div className="flex items-center gap-2 text-sm font-medium">
               <BookOpen className="w-4 h-4" />
               <span>Creator Story</span>
             </div>
             <p className="pl-6 text-sm text-muted-foreground line-clamp-3">
-              {creator.creator_story.brand_origin_story}
+              {creator.creator_story.origin_story}
             </p>
           </div>
         )}
@@ -125,25 +125,30 @@ export const CreatorMetadataCard = ({ creator }: CreatorMetadataCardProps) => {
               <span>Visual Identity</span>
             </div>
             <div className="pl-6 space-y-1 text-sm text-muted-foreground">
-              {creator.visual_identity.visual_vibe && <p><strong>Vibe:</strong> {creator.visual_identity.visual_vibe}</p>}
-              {creator.visual_identity.signature_look && <p><strong>Look:</strong> {creator.visual_identity.signature_look}</p>}
+              {creator.visual_identity.photo_style && 
+                <p><strong>Style:</strong> {creator.visual_identity.photo_style}</p>
+              }
+              {creator.visual_identity.appearance_keywords && 
+               creator.visual_identity.appearance_keywords.length > 0 && (
+                <p><strong>Keywords:</strong> {creator.visual_identity.appearance_keywords.slice(0, 3).join(', ')}</p>
+              )}
             </div>
           </div>
         )}
 
         {/* Messaging Style */}
-        {(creator.scripts_messaging || creator.messaging) && (
+        {creator.scripts_messaging && (
           <div className="space-y-2 pt-2 border-t">
             <div className="flex items-center gap-2 text-sm font-medium">
               <MessageSquare className="w-4 h-4" />
               <span>Messaging Style</span>
             </div>
             <div className="pl-6 space-y-1 text-sm text-muted-foreground">
-              {(creator.scripts_messaging?.conversation_style || creator.messaging?.conversation_style) && 
-                <p><strong>Style:</strong> {creator.scripts_messaging?.conversation_style || creator.messaging?.conversation_style}</p>
+              {creator.scripts_messaging.message_tone && 
+                <p><strong>Tone:</strong> {creator.scripts_messaging.message_tone}</p>
               }
-              {(creator.scripts_messaging?.storytelling_style || creator.messaging?.storytelling_style) && 
-                <p><strong>Storytelling:</strong> {creator.scripts_messaging?.storytelling_style || creator.messaging?.storytelling_style}</p>
+              {creator.scripts_messaging.selling_strategy && 
+                <p><strong>Strategy:</strong> {creator.scripts_messaging.selling_strategy}</p>
               }
             </div>
           </div>
@@ -157,33 +162,29 @@ export const CreatorMetadataCard = ({ creator }: CreatorMetadataCardProps) => {
               <span>Content Preferences</span>
             </div>
             <div className="pl-6 space-y-1 text-sm text-muted-foreground">
-              {(creator.posting_frequency || creator.content_preferences.posting_frequency) && (
-                <p><strong>Posting:</strong> {creator.posting_frequency || creator.content_preferences.posting_frequency}</p>
+              {creator.content_preferences.posting_frequency && (
+                <p><strong>Posting:</strong> {creator.content_preferences.posting_frequency}</p>
               )}
-              {creator.content_preferences.preferred_atmosphere && (
-                <p><strong>Atmosphere:</strong> {creator.content_preferences.preferred_atmosphere}</p>
+              {creator.content_preferences.content_energy_level && (
+                <p><strong>Energy:</strong> {creator.content_preferences.content_energy_level}</p>
               )}
-              {creator.content_preferences.preferred_themes && creator.content_preferences.preferred_themes.length > 0 && (
-                <p><strong>Themes:</strong> {creator.content_preferences.preferred_themes.join(', ')}</p>
+              {creator.content_preferences.preferred_content_types && 
+               creator.content_preferences.preferred_content_types.length > 0 && (
+                <p><strong>Types:</strong> {creator.content_preferences.preferred_content_types.slice(0, 3).join(', ')}</p>
               )}
             </div>
           </div>
         )}
 
         {/* Pricing Structure */}
-        {(creator.pricing_structure || creator.pricing) && 
-         (creator.pricing_structure?.menu_item_names || creator.pricing?.menu_item_names) && 
-         (creator.pricing_structure?.menu_item_names || creator.pricing?.menu_item_names || []).length > 0 && (
+        {creator.menu_items && creator.menu_items.length > 0 && (
           <div className="space-y-2 pt-2 border-t">
             <div className="flex items-center gap-2 text-sm font-medium">
               <DollarSign className="w-4 h-4" />
-              <span>Pricing Structure</span>
+              <span>Menu Items</span>
             </div>
             <div className="pl-6 space-y-1 text-sm text-muted-foreground">
-              <p><strong>Menu Items:</strong> {(creator.pricing_structure?.menu_item_names || creator.pricing?.menu_item_names || []).slice(0, 3).join(', ')}</p>
-              {(creator.pricing_structure?.bundle_style || creator.pricing?.bundle_style) && 
-                <p><strong>Bundle Style:</strong> {creator.pricing_structure?.bundle_style || creator.pricing?.bundle_style}</p>
-              }
+              <p><strong>Items:</strong> {creator.menu_items.slice(0, 3).map(item => item.title).join(', ')}</p>
             </div>
           </div>
         )}
