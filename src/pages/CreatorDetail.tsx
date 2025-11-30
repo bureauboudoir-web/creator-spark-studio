@@ -16,6 +16,7 @@ import { ArrowLeft, User, RefreshCw, FileJson, Sparkles, Loader2, AlertCircle, P
 import { MOCK_CREATORS, getMockCreatorById } from "@/mocks/mockCreators";
 import { useCreatorContext } from "@/contexts/CreatorContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { MockModeWarning } from "@/components/shared/MockModeWarning";
 
 interface CreatorData {
   id: string;
@@ -693,18 +694,7 @@ const CreatorDetail = () => {
           </div>
 
           {/* Mock Data Warning */}
-          {usingMockData && (
-            <Card className="bg-amber-500/10 border-amber-500/20">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-500" />
-                  <p className="text-sm text-amber-700 dark:text-amber-400">
-                    <strong>Using mock creator data</strong> – BB API not configured.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {usingMockData && <MockModeWarning />}
 
           {/* BB API Warning */}
           {bbConfigured === false && (
@@ -907,24 +897,37 @@ const CreatorDetail = () => {
               {/* Section A - Generation Trigger */}
               {!starterPack && (
                 <div className="text-center space-y-4">
-                  <Button
-                    onClick={() => generateStarterPack(creator.id)}
-                    disabled={generating}
-                    className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity gap-2"
-                    size="lg"
-                  >
-                    {generating ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Generating Starter Pack...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-5 h-5" />
-                        Generate Starter Pack
-                      </>
-                    )}
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="w-full block">
+                          <Button
+                            onClick={() => generateStarterPack(creator.id)}
+                            disabled={generating || usingMockData}
+                            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity gap-2"
+                            size="lg"
+                          >
+                            {generating ? (
+                              <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Generating Starter Pack...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-5 h-5" />
+                                Generate Starter Pack
+                              </>
+                            )}
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      {usingMockData && (
+                        <TooltipContent>
+                          Cannot generate in mock mode
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                   <p className="text-sm text-muted-foreground">
                     Generate a personalized starter pack based on {creator.full_name}'s persona and style preferences
                   </p>
@@ -1112,15 +1115,28 @@ const CreatorDetail = () => {
                     </div>
                     <div className="flex flex-wrap gap-3">
                       {/* Save button */}
-                      <Button
-                        onClick={handleSave}
-                        disabled={usingMockData || saving || !starterPack}
-                        className="flex-1 gap-2"
-                        variant="secondary"
-                      >
-                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        Save Draft
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="flex-1">
+                              <Button
+                                onClick={handleSave}
+                                disabled={usingMockData || saving || !starterPack}
+                                className="w-full gap-2"
+                                variant="secondary"
+                              >
+                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                Save Draft
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {usingMockData && (
+                            <TooltipContent>
+                              Cannot save in mock mode
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                       
                       {/* Send to BB button */}
                       <TooltipProvider>
@@ -1139,7 +1155,7 @@ const CreatorDetail = () => {
                           </TooltipTrigger>
                           {usingMockData && (
                             <TooltipContent>
-                              BB sync disabled in mock mode. Configure BB API in Settings to enable.
+                              Cannot send to BB in mock mode
                             </TooltipContent>
                           )}
                         </Tooltip>
@@ -1150,6 +1166,7 @@ const CreatorDetail = () => {
                         onClick={handleRegenerate}
                         variant="outline"
                         className="gap-2"
+                        disabled={usingMockData}
                       >
                         <RotateCcw className="w-4 h-4" />
                         Regenerate

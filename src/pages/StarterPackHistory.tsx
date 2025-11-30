@@ -9,6 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, Eye, AlertCircle, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { RoleGuard } from '@/components/auth/RoleGuard';
+import { useCreatorContext } from '@/contexts/CreatorContext';
+import { NoCreatorSelected } from '@/components/shared/NoCreatorSelected';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 interface StarterPack {
   id: string;
@@ -25,13 +28,14 @@ const StarterPackHistory = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { selectedCreatorId } = useCreatorContext();
   const [starterPacks, setStarterPacks] = useState<StarterPack[]>([]);
   const [filteredPacks, setFilteredPacks] = useState<StarterPack[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [bbConfigured, setBbConfigured] = useState<boolean | null>(null);
 
-  const creatorIdFilter = searchParams.get('creator_id');
+  const creatorIdFilter = searchParams.get('creator_id') || selectedCreatorId;
 
   useEffect(() => {
     checkBBConfig();
@@ -136,16 +140,24 @@ const StarterPackHistory = () => {
     });
   };
 
+  if (!selectedCreatorId) {
+    return (
+      <RoleGuard staffOnly fallback={<div>Access denied</div>}>
+        <div className="container mx-auto p-6">
+          <PageHeader title="Starter Pack History" />
+          <NoCreatorSelected />
+        </div>
+      </RoleGuard>
+    );
+  }
+
   return (
     <RoleGuard staffOnly fallback={<div>Access denied</div>}>
       <div className="container mx-auto py-8 px-4">
-        <div className="flex items-center gap-3 mb-6">
-          <Package className="w-8 h-8 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold">Starter Pack History</h1>
-            <p className="text-muted-foreground">Review and manage all generated starter packs</p>
-          </div>
-        </div>
+        <PageHeader 
+          title="Starter Pack History"
+          subtitle="Review and manage generated starter packs"
+        />
 
         {bbConfigured === false && (
           <Card className="bg-amber-500/10 border-amber-500/20 mb-6">

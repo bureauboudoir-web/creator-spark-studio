@@ -83,8 +83,8 @@ export const ContentCard = ({ id, title, content, type, approvalStatus, shortDes
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               {CategoryIcon && categoryData && (
-                <div className={`${categoryData.color} p-1 rounded`}>
-                  <CategoryIcon className="w-3 h-3 text-white" />
+                <div className="bg-primary/10 p-1 rounded">
+                  <CategoryIcon className="w-3 h-3 text-primary" />
                 </div>
               )}
               <CardTitle className="text-lg">{title}</CardTitle>

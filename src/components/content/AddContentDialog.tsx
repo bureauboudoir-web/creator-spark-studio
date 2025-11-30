@@ -119,8 +119,8 @@ export const AddContentDialog = ({ open, onOpenChange, onSuccess }: AddContentDi
                   onClick={() => handleCategorySelect(category.id)}
                   className="flex flex-col items-center gap-3 p-6 border rounded-lg hover:border-primary transition-colors"
                 >
-                  <div className={`${category.color} p-3 rounded-lg`}>
-                    <Icon className="w-6 h-6 text-white" />
+                  <div className="bg-primary/10 p-3 rounded-lg">
+                    <Icon className="w-6 h-6 text-primary" />
                   </div>
                   <span className="font-medium">{category.label}</span>
                 </button>

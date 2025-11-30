@@ -63,14 +63,19 @@ const CreatorList = () => {
       // Mock mode is off - fetch from live API
       const { data, error } = await supabase.functions.invoke('fetch-creators-from-bb');
 
-      if (error || !data?.success || !data?.data || data.data.length === 0) {
+      if (error || !data?.success || !data?.data) {
         console.error('Error loading creators from BB:', error || 'No data returned');
         // Show empty state, don't fall back to mock
         setUsingMockData(false);
         setCreators([]);
         
+        if (data?.data?.length === 0) {
+          // Empty result is OK, just show empty state
+          return;
+        }
+        
         toast({
-          title: "No creators found",
+          title: "Error",
           description: "Failed to load creators from BB API",
           variant: "destructive",
         });
