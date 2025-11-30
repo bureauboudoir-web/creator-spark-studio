@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCreatorContext } from "@/contexts/CreatorContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,11 +52,11 @@ export default function StarterPackGenerator() {
   };
 
   // Fetch on mount
-  useState(() => {
+  useEffect(() => {
     if (selectedCreatorId) {
       fetchCreatorData();
     }
-  });
+  }, [selectedCreatorId]);
 
   if (!selectedCreatorId || !selectedCreator) {
     return (
