@@ -69,15 +69,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fix URL construction - remove duplicate /functions/v1/
+    // Fix URL construction - remove duplicate /functions/v1/ and use correct endpoint
     const baseUrl = settings.bb_api_url.replace(/\/+$/, ''); // Remove trailing slashes
-    const bbUrl = `${baseUrl}/get-all-creators`;
+    const bbUrl = `${baseUrl}/external-creators`;
     console.log('Calling BB API:', bbUrl);
 
     const bbResponse = await fetch(bbUrl, {
       method: 'GET',
       headers: {
-        'x-api-key': settings.bb_api_key,
+        'Authorization': `Bearer ${settings.bb_api_key}`,
         'Content-Type': 'application/json',
       },
     });
