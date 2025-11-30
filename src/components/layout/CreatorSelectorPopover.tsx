@@ -77,7 +77,7 @@ export const CreatorSelectorPopover = () => {
           <CreatorChip onClick={() => setOpen(true)} />
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
+      <PopoverContent className="w-80 p-0 bg-popover" align="end">
         <div className="p-3 border-b">
           <h4 className="font-semibold">Select Creator</h4>
           <p className="text-xs text-muted-foreground mt-1">
