@@ -42,10 +42,14 @@ const ApiSettings = () => {
   const [testing, setTesting] = useState(false);
   const [debugging, setDebugging] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
-  const [apiKeyModified, setApiKeyModified] = useState(false);
+  
+  // Separate API key handling - never store masked value in state
+  const [hasApiKey, setHasApiKey] = useState(false);      // Whether DB has a key
+  const [apiKeyInput, setApiKeyInput] = useState("");     // Real user input
+  const [apiKeyModified, setApiKeyModified] = useState(false);  // User changed it
+  
   const [settings, setSettings] = useState({
     bb_api_url: "",
-    bb_api_key: "",
     mock_mode: true,
   });
 
@@ -70,10 +74,17 @@ const ApiSettings = () => {
       if (data?.data) {
         setSettings({
           bb_api_url: data.data.bb_api_url || "",
-          bb_api_key: data.data.bb_api_key || "",
           mock_mode: data.data.mock_mode ?? true,
         });
-        setApiKeyModified(false); // Reset modification tracking
+        
+        // Track if API key exists in DB (check for masked placeholder)
+        const keyExists = data.data.bb_api_key === '••••••••';
+        setHasApiKey(keyExists);
+        console.log('✅ API key exists in DB:', keyExists);
+        
+        // Clear the input field - don't show masked value
+        setApiKeyInput("");
+        setApiKeyModified(false);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -97,19 +108,12 @@ const ApiSettings = () => {
         mock_mode: settings.mock_mode,
       };
       
-      // Include API key if it was modified
-      if (apiKeyModified) {
-        const rawKey = settings.bb_api_key;
-        
-        // Skip if user hasn't actually changed from masked display
-        if (rawKey === '••••••••') {
-          console.log('⏭️ Skipping API key - masked placeholder detected');
-        } else {
-          // Only trim whitespace, store everything else as-is
-          const trimmedKey = rawKey.trim();
-          payload.bb_api_key = trimmedKey;
-          console.log('✅ Storing API key:', `${trimmedKey.length} chars`);
-        }
+      // Only include API key if user entered a new one
+      if (apiKeyModified && apiKeyInput.trim()) {
+        payload.bb_api_key = apiKeyInput.trim();
+        console.log('✅ Saving new API key:', `${apiKeyInput.trim().length} chars`);
+      } else {
+        console.log('⏭️ Not updating API key (unchanged)');
       }
       
       // Debug logging
@@ -117,6 +121,7 @@ const ApiSettings = () => {
         bb_api_url: payload.bb_api_url,
         bb_api_key: payload.bb_api_key !== undefined ? `[KEY PROVIDED - ${payload.bb_api_key.length} chars]` : '[NOT INCLUDED]',
         mock_mode: payload.mock_mode,
+        hasApiKey,
         apiKeyModified,
       });
       
@@ -138,7 +143,13 @@ const ApiSettings = () => {
       setUsingMockData(settings.mock_mode);
       console.log('Global mockMode updated:', settings.mock_mode);
       
-      // Reset modified flag after successful save
+      // After successful save, update hasApiKey if we saved a new one
+      if (apiKeyModified && apiKeyInput.trim()) {
+        setHasApiKey(true);
+      }
+      
+      // Reset input state
+      setApiKeyInput("");
       setApiKeyModified(false);
       
       // Refresh from DB to ensure consistency and trigger CreatorSelector refresh
@@ -234,13 +245,13 @@ const ApiSettings = () => {
       }
       console.groupEnd();
       
-      // ===== TEST C: Test via edge function (safe for masked keys) =====
+      // ===== TEST C: Test via edge function =====
       console.group('🌐 Test C: Test BB Connection via Edge Function');
       if (!settings.bb_api_url) {
         console.warn('⚠️ Skipping API test - URL not configured');
-      } else if (settings.bb_api_key === '••••••••' || !settings.bb_api_key) {
-        console.warn('⚠️ API key is masked/empty - cannot do direct client-side fetch');
-        console.log('📤 Testing via edge function instead...');
+      } else if (!hasApiKey && !apiKeyInput) {
+        console.warn('⚠️ No API key configured or entered');
+        console.log('📤 Testing via edge function (uses DB-stored key)...');
         
         try {
           const { data: testResult, error: testError } = await supabase.functions.invoke('test-bb-connection');
@@ -257,9 +268,10 @@ const ApiSettings = () => {
         } catch (edgeFunctionError) {
           console.error('❌ Edge function call failed:', edgeFunctionError);
         }
-      } else {
-        // Safe to do direct fetch with real API key
-        const rawKey = settings.bb_api_key.trim();
+      } else if (apiKeyModified && apiKeyInput) {
+        // User entered a new key - test with it directly
+        console.log('📤 Testing with newly entered key...');
+        const rawKey = apiKeyInput.trim();
         const sanitizedUrl = sanitizeUrl(settings.bb_api_url);
         
         const baseUrl = sanitizedUrl.endsWith('/') 
@@ -304,20 +316,36 @@ const ApiSettings = () => {
           console.error('❌ Fetch Error:', fetchError);
           console.error('   This could be due to CORS, network issues, or invalid URL');
         }
+      } else {
+        // Key exists in DB, use edge function
+        console.log('📤 Testing via edge function (DB-stored key)...');
+        
+        try {
+          const { data: testResult, error: testError } = await supabase.functions.invoke('test-bb-connection');
+          
+          if (testError) {
+            console.error('❌ Edge function error:', testError);
+          } else {
+            console.log('📥 Edge function result:', testResult);
+            
+            if (testResult?.status === 'ok') {
+              console.log('🎉 BB API is live and Content Generator is now connected!');
+            }
+          }
+        } catch (edgeFunctionError) {
+          console.error('❌ Edge function call failed:', edgeFunctionError);
+        }
       }
       console.groupEnd();
       
       // ===== TEST E: Test save function =====
       console.group('💾 Test E: Save Settings Test');
       
-      // Log API key validation
-      const rawKey = settings.bb_api_key;
-      const trimmedKey = rawKey.trim();
-      const isValid = trimmedKey.length > 0 && trimmedKey !== '••••••••';
-      
-      console.log('apiKeyField raw:', JSON.stringify(rawKey));
-      console.log('apiKeyField trimmed:', JSON.stringify(trimmedKey), `(${trimmedKey.length} chars)`);
-      console.log('apiKeyField valid:', isValid);
+      // Log API key state
+      console.log('hasApiKey (from DB):', hasApiKey);
+      console.log('apiKeyInput (user entered):', apiKeyInput ? `${apiKeyInput.length} chars` : '(empty)');
+      console.log('apiKeyModified:', apiKeyModified);
+      console.log('Will save new key:', apiKeyModified && apiKeyInput.trim().length > 0);
       
       const testSettings = {
         ...settings,
@@ -433,10 +461,10 @@ const ApiSettings = () => {
                       <Input
                         id="bb_api_key"
                         type={showApiKey ? "text" : "password"}
-                        placeholder="Enter API key"
-                        value={settings.bb_api_key}
+                        placeholder={hasApiKey ? "••••••••••••••••••••" : "Enter API key"}
+                        value={apiKeyInput}
                         onChange={(e) => {
-                          setSettings({ ...settings, bb_api_key: e.target.value });
+                          setApiKeyInput(e.target.value);
                           setApiKeyModified(true);
                         }}
                         className="bg-background/50 pr-10"
@@ -463,10 +491,10 @@ const ApiSettings = () => {
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {settings.bb_api_key === '••••••••' ? (
-                        <span className="text-green-600">✓ API key is configured (paste new value to replace)</span>
-                      ) : apiKeyModified ? (
-                        <span className="text-amber-600">⚠ New key entered - will be saved on submit</span>
+                      {hasApiKey && !apiKeyModified ? (
+                        <span className="text-green-600">✓ API key is configured (enter new value to replace)</span>
+                      ) : apiKeyModified && apiKeyInput ? (
+                        <span className="text-amber-600">⚠ New key entered ({apiKeyInput.length} chars) - will be saved on submit</span>
                       ) : (
                         'Your BB API key for authentication'
                       )}
@@ -493,7 +521,7 @@ const ApiSettings = () => {
                     <Button
                       variant="outline"
                       onClick={handleTestConnection}
-                      disabled={testing || !settings.bb_api_url || !settings.bb_api_key}
+                      disabled={testing || !settings.bb_api_url || (!hasApiKey && !apiKeyInput)}
                     >
                       {testing ? (
                         <>
