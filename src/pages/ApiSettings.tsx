@@ -18,6 +18,7 @@ const ApiSettings = () => {
   const [testing, setTesting] = useState(false);
   const [debugging, setDebugging] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [apiKeyModified, setApiKeyModified] = useState(false);
   const [settings, setSettings] = useState({
     bb_api_url: "",
     bb_api_key: "",
@@ -48,6 +49,7 @@ const ApiSettings = () => {
           bb_api_key: data.data.bb_api_key || "",
           mock_mode: data.data.mock_mode ?? true,
         });
+        setApiKeyModified(false); // Reset modification tracking
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -64,22 +66,47 @@ const ApiSettings = () => {
   const handleSave = async () => {
     try {
       setSaving(true);
+      
+      // Build payload - only include API key if user actually modified it
+      const payload: Record<string, any> = {
+        bb_api_url: settings.bb_api_url,
+        mock_mode: settings.mock_mode,
+      };
+      
+      // Only include API key if it was modified by the user
+      if (apiKeyModified && settings.bb_api_key) {
+        payload.bb_api_key = settings.bb_api_key;
+      }
+      
+      // Debug logging
+      console.log('💾 Saving settings:', {
+        bb_api_url: payload.bb_api_url,
+        bb_api_key: payload.bb_api_key ? `[KEY PROVIDED - ${payload.bb_api_key.length} chars]` : '[NOT INCLUDED]',
+        mock_mode: payload.mock_mode,
+        apiKeyModified,
+      });
+      
       const { data, error } = await supabase.functions.invoke('manage-api-settings', {
         method: 'POST',
-        body: settings,
+        body: payload,
       });
 
       if (error) throw error;
+
+      console.log('✅ Save response:', data);
 
       toast({
         title: "Success",
         description: "API settings saved successfully",
       });
       
-      // Reload to get masked key
+      // Reset modified flag after successful save
+      setApiKeyModified(false);
+      
+      // Reload to get latest values
       await loadSettings();
     } catch (error) {
-      console.error('Error saving settings:', error);
+      console.error('❌ Error saving settings:', error);
       toast({
         title: "Error",
         description: "Failed to save API settings",
@@ -329,7 +356,10 @@ const ApiSettings = () => {
                         type={showApiKey ? "text" : "password"}
                         placeholder="Enter API key"
                         value={settings.bb_api_key}
-                        onChange={(e) => setSettings({ ...settings, bb_api_key: e.target.value })}
+                        onChange={(e) => {
+                          setSettings({ ...settings, bb_api_key: e.target.value });
+                          setApiKeyModified(true);
+                        }}
                         className="bg-background/50 pr-10"
                       />
                       <Button
@@ -347,7 +377,13 @@ const ApiSettings = () => {
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Your BB API key for authentication
+                      {settings.bb_api_key === '••••••••' ? (
+                        <span className="text-green-600">✓ API key is configured (paste new value to replace)</span>
+                      ) : apiKeyModified ? (
+                        <span className="text-amber-600">⚠ New key entered - will be saved on submit</span>
+                      ) : (
+                        'Your BB API key for authentication'
+                      )}
                     </p>
                   </div>
 
