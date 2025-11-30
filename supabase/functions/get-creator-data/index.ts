@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     const bbResponse = await fetch(bbUrl, {
       method: 'GET',
       headers: {
-        'x-api-key': settings.bb_api_key,
+        'Authorization': `Bearer ${settings.bb_api_key}`,
         'Content-Type': 'application/json',
       },
     });

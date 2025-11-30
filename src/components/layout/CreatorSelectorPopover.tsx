@@ -32,7 +32,7 @@ export const CreatorSelectorPopover = () => {
   const fetchCreators = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('get-creators');
+      const { data, error } = await supabase.functions.invoke('fetch-creators-from-bb');
       
       if (error) throw error;
       
