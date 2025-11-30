@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Select,
@@ -7,146 +7,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { useCreatorContext } from '@/contexts/CreatorContext';
-import { Users, Loader2, CheckCircle, AlertCircle, Zap, Database } from 'lucide-react';
+import { Users, Loader2, CheckCircle, AlertCircle, Zap, Database, Search } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { BBCreator, BBCreatorResponse } from '@/types/bb-creator';
-import { BBApiErrorBanner } from './BBApiErrorBanner';
-import { MOCK_CREATORS } from '@/mocks/mockCreators';
 import { Link } from 'react-router-dom';
 
 export const CreatorSelector = () => {
-  const [creators, setCreators] = useState<BBCreator[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const [testingConnection, setTestingConnection] = useState(false);
   const { toast } = useToast();
   const { 
+    creators,
+    creatorsLoading,
+    creatorsError,
     selectedCreator, 
     setSelectedCreator, 
-    apiError, 
-    setApiError, 
-    usingMockData, 
-    setUsingMockData,
+    usingMockData,
     bbApiStatus,
     setBbApiStatus,
+    refreshAllCreators,
   } = useCreatorContext();
 
-  useEffect(() => {
-    fetchCreatorsFromBB();
-  }, [usingMockData]);
-
-  const fetchCreatorsFromBB = async () => {
-    try {
-      setLoading(true);
-      setApiError(null);
-
-      if (usingMockData) {
-        // Use mock data when mock mode is enabled
-        console.log('Mock mode enabled - using mock creators');
-        setBbApiStatus('MOCK_MODE');
-        
-        const mockBBCreators: BBCreator[] = MOCK_CREATORS.map((mock) => ({
-          creator_id: mock.id,
-          name: mock.name,
-          email: mock.email,
-          profile_photo_url: mock.avatarUrl,
-          creator_status: mock.status,
-        }));
-        
-        setCreators(mockBBCreators);
-        
-        if (!selectedCreator) {
-          setSelectedCreator(mockBBCreators[0]);
-        }
-        return;
-      }
-
-      // Mock mode is off - try to fetch from BB API
-      const { data, error } = await supabase.functions.invoke<BBCreatorResponse>(
-        'fetch-creators-from-bb'
-      );
-
-      if (error) {
-        console.error('Error invoking fetch-creators-from-bb:', error);
-        setBbApiStatus('CONNECTION_ERROR');
-        
-        const mockBBCreators: BBCreator[] = MOCK_CREATORS.map((mock) => ({
-          creator_id: mock.id,
-          name: mock.name,
-          email: mock.email,
-          profile_photo_url: mock.avatarUrl,
-          creator_status: mock.status,
-        }));
-        
-        setCreators(mockBBCreators);
-        
-        if (!selectedCreator) {
-          setSelectedCreator(mockBBCreators[0]);
-        }
-        return;
-      }
-
-      if (!data?.success || !data?.data || data.data.length === 0) {
-        // BB API not configured or failed - use mock data as fallback
-        console.log('BB API not available, using mock data');
-        
-        // Determine specific error type
-        if (data?.error?.includes('not configured') || data?.error?.includes('API URL') || data?.error?.includes('API key')) {
-          setBbApiStatus('MISSING_API_KEY');
-        } else {
-          setBbApiStatus('CONNECTION_ERROR');
-        }
-        
-        const mockBBCreators: BBCreator[] = MOCK_CREATORS.map((mock) => ({
-          creator_id: mock.id,
-          name: mock.name,
-          email: mock.email,
-          profile_photo_url: mock.avatarUrl,
-          creator_status: mock.status,
-        }));
-        
-        setCreators(mockBBCreators);
-        
-        if (!selectedCreator) {
-          setSelectedCreator(mockBBCreators[0]);
-        }
-        return;
-      }
-
-      // BB API success - use real data
-      setBbApiStatus('CONNECTED');
-      setUsingMockData(false);
-      const fetchedCreators = data.data;
-      setCreators(fetchedCreators);
-
-      if (fetchedCreators.length > 0 && !selectedCreator) {
-        setSelectedCreator(fetchedCreators[0]);
-      }
-    } catch (err) {
-      console.error('Unexpected error fetching creators:', err);
-      setBbApiStatus('CONNECTION_ERROR');
-      
-      const mockBBCreators: BBCreator[] = MOCK_CREATORS.map((mock) => ({
-        creator_id: mock.id,
-        name: mock.name,
-        email: mock.email,
-        profile_photo_url: mock.avatarUrl,
-        creator_status: mock.status,
-      }));
-      
-      setCreators(mockBBCreators);
-      
-      if (!selectedCreator) {
-        setSelectedCreator(mockBBCreators[0]);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Filter creators by search query
+  const filteredCreators = creators.filter(c => 
+    c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleTestConnection = async () => {
     setTestingConnection(true);
@@ -176,8 +67,8 @@ export const CreatorSelector = () => {
           title: "Connection Successful",
           description: "BB API is reachable and responding",
         });
-        // Optionally refresh creators list
-        await fetchCreatorsFromBB();
+        // Refresh creators list
+        await refreshAllCreators();
       }
     } catch (err) {
       console.error('Error testing connection:', err);
@@ -206,7 +97,7 @@ export const CreatorSelector = () => {
     return 'outline';
   };
 
-  if (loading) {
+  if (creatorsLoading) {
     return (
       <div className="flex items-center gap-2">
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -215,19 +106,36 @@ export const CreatorSelector = () => {
     );
   }
 
-  if (apiError) {
+  if (creatorsError && !usingMockData) {
     return (
-      <div className="w-full">
-        <BBApiErrorBanner error={apiError} />
+      <div className="w-full space-y-3">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>{creatorsError}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refreshAllCreators}
+              className="ml-4"
+            >
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
 
-  if (creators.length === 0) {
+  if (creators.length === 0 && !creatorsLoading) {
     return (
-      <div className="flex items-center gap-2 text-muted-foreground">
-        <Users className="h-4 w-4" />
-        <span className="text-sm">No creators found</span>
+      <div className="space-y-3">
+        <Alert className="bg-muted/50">
+          <Users className="h-4 w-4" />
+          <AlertDescription>
+            No creators found. {!usingMockData && 'Make sure the BB API is configured correctly.'}
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -251,7 +159,7 @@ export const CreatorSelector = () => {
       <div className="flex items-center gap-2 flex-wrap">
         <Users className="h-4 w-4 text-muted-foreground" />
         
-        {/* Creator Selector */}
+        {/* Creator Selector with Search */}
         <Select 
           value={selectedCreator?.creator_id || undefined} 
           onValueChange={handleSelectCreator}
@@ -263,7 +171,7 @@ export const CreatorSelector = () => {
                   <Avatar className="h-5 w-5">
                     <AvatarImage src={selectedCreator.profile_photo_url || ''} />
                     <AvatarFallback className="text-xs">
-                      {selectedCreator.name.charAt(0).toUpperCase()}
+                      {selectedCreator.name?.charAt(0)?.toUpperCase() || '?'}
                     </AvatarFallback>
                   </Avatar>
                   <span className="truncate">{selectedCreator.name}</span>
@@ -272,27 +180,44 @@ export const CreatorSelector = () => {
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {creators.map((creator) => (
-              <SelectItem key={creator.creator_id} value={creator.creator_id}>
-                <div className="flex items-center gap-3 py-1">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={creator.profile_photo_url || ''} />
-                    <AvatarFallback>
-                      {creator.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col gap-0.5 min-w-0">
-                    <span className="font-medium truncate">{creator.name}</span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="truncate">{creator.email}</span>
-                      <Badge variant={getStatusColor(creator.creator_status)} className="text-xs">
-                        {creator.creator_status}
-                      </Badge>
+            <div className="px-2 pb-2">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                <Input
+                  placeholder="Search creators..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-7 h-8 text-sm"
+                />
+              </div>
+            </div>
+            {filteredCreators.length === 0 ? (
+              <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                No creators found
+              </div>
+            ) : (
+              filteredCreators.map((creator) => (
+                <SelectItem key={creator.creator_id} value={creator.creator_id}>
+                  <div className="flex items-center gap-3 py-1">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={creator.profile_photo_url || ''} />
+                      <AvatarFallback>
+                        {creator.name?.charAt(0)?.toUpperCase() || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="font-medium truncate">{creator.name}</span>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="truncate">{creator.email}</span>
+                        <Badge variant={getStatusColor(creator.creator_status)} className="text-xs">
+                          {creator.creator_status}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </SelectItem>
-            ))}
+                </SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
 

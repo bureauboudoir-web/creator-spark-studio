@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { RoleGuard } from "./auth/RoleGuard";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
-import { CreatorSelector } from "./staff/CreatorSelector";
+import { CreatorSelectorPopover } from "./layout/CreatorSelectorPopover";
 import { LanguageSelector } from "./layout/LanguageSelector";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
@@ -107,6 +107,13 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <div className="px-2 py-2 border-t">
+              <div className="mb-2">
+                <CreatorSelectorPopover />
+              </div>
+            </div>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <div className="flex items-center gap-2 px-2 py-2">
               <LanguageSelector />
