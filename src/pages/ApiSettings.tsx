@@ -23,6 +23,22 @@ const sanitizeApiKey = (key: string): string => {
   return asciiOnly.trim();
 };
 
+// Sanitize URL: trim whitespace, remove invisible chars, fix double slashes
+const sanitizeUrl = (url: string): string => {
+  if (!url) return '';
+  
+  // Remove non-ASCII characters except valid URL characters
+  let cleaned = url.replace(/[^\x20-\x7E]/g, '');
+  
+  // Trim whitespace
+  cleaned = cleaned.trim();
+  
+  // Fix double slashes (except after protocol)
+  cleaned = cleaned.replace(/([^:])\/\//g, '$1/');
+  
+  return cleaned;
+};
+
 const ApiSettings = () => {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
@@ -81,9 +97,9 @@ const ApiSettings = () => {
     try {
       setSaving(true);
       
-      // Build payload
+      // Build payload with sanitized URL
       const payload: Record<string, any> = {
-        bb_api_url: settings.bb_api_url,
+        bb_api_url: sanitizeUrl(settings.bb_api_url),
         mock_mode: settings.mock_mode,
       };
       
@@ -222,25 +238,49 @@ const ApiSettings = () => {
       }
       console.groupEnd();
       
-      // ===== TEST C: Direct fetch to external-api-status endpoint =====
-      console.group('🌐 Test C: Direct Fetch to BB external-api-status');
-      if (!settings.bb_api_url || !settings.bb_api_key) {
-        console.warn('⚠️ Skipping API test - URL or API key not configured');
+      // ===== TEST C: Test via edge function (safe for masked keys) =====
+      console.group('🌐 Test C: Test BB Connection via Edge Function');
+      if (!settings.bb_api_url) {
+        console.warn('⚠️ Skipping API test - URL not configured');
+      } else if (settings.bb_api_key === '••••••••' || !settings.bb_api_key) {
+        console.warn('⚠️ API key is masked/empty - cannot do direct client-side fetch');
+        console.log('📤 Testing via edge function instead...');
+        
+        try {
+          const { data: testResult, error: testError } = await supabase.functions.invoke('test-bb-connection');
+          
+          if (testError) {
+            console.error('❌ Edge function error:', testError);
+          } else {
+            console.log('📥 Edge function result:', testResult);
+            
+            if (testResult?.status === 'ok') {
+              console.log('🎉 BB API is live and Content Generator is now connected!');
+            }
+          }
+        } catch (edgeFunctionError) {
+          console.error('❌ Edge function call failed:', edgeFunctionError);
+        }
       } else {
-        // Build the URL - handle trailing slash
-        const baseUrl = settings.bb_api_url.endsWith('/') 
-          ? settings.bb_api_url 
-          : settings.bb_api_url + '/';
+        // Safe to do direct fetch with real API key
+        const sanitizedKey = sanitizeApiKey(settings.bb_api_key);
+        const sanitizedUrl = sanitizeUrl(settings.bb_api_url);
+        
+        const baseUrl = sanitizedUrl.endsWith('/') 
+          ? sanitizedUrl 
+          : sanitizedUrl + '/';
         const statusEndpoint = `${baseUrl}external-api-status`;
         
         console.log('📤 Request URL:', statusEndpoint);
+        console.log('📤 Sanitized URL:', sanitizedUrl);
+        console.log('📤 Sanitized API Key length:', sanitizedKey.length);
         console.log('📤 Authorization: Bearer [API_KEY]');
         
         try {
           const response = await fetch(statusEndpoint, {
             method: 'GET',
             headers: {
-              'Authorization': `Bearer ${settings.bb_api_key}`,
+              'Authorization': `Bearer ${sanitizedKey}`,
               'Content-Type': 'application/json',
             },
           });
@@ -255,6 +295,10 @@ const ApiSettings = () => {
           try {
             const responseJson = JSON.parse(responseText);
             console.log('✅ Response Body (JSON):', responseJson);
+            
+            if (response.status === 200) {
+              console.log('🎉 BB API is live and Content Generator is now connected!');
+            }
           } catch {
             console.log('📄 Response Body (Text):', responseText);
           }
