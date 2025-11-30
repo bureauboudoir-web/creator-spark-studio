@@ -8,7 +8,8 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Check } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Check } from "lucide-react";
 import { useCreatorContext } from "@/contexts/CreatorContext";
 import { supabase } from "@/integrations/supabase/client";
 import { BBCreator } from "@/types/bb-creator";
@@ -86,8 +87,17 @@ export const CreatorSelectorPopover = () => {
         </div>
         <ScrollArea className="h-[300px]">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <div className="p-2 space-y-1">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-md">
+                  <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-48" />
+                  </div>
+                  <Skeleton className="h-5 w-16 rounded-full flex-shrink-0" />
+                </div>
+              ))}
             </div>
           ) : creators.length === 0 ? (
             <div className="text-center py-8 text-sm text-muted-foreground">
