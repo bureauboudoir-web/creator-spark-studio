@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, User, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { CreatorSelector } from '@/components/staff/CreatorSelector';
-import { useCreatorContext } from '@/hooks/useCreatorContext';
+import { useCreatorContext } from '@/contexts/CreatorContext';
 
 interface Creator {
   id: string;

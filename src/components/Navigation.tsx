@@ -8,7 +8,7 @@ import { useRole } from "@/hooks/useRole";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { CreatorSelector } from "./staff/CreatorSelector";
-import { useCreatorContext } from "@/hooks/useCreatorContext";
+import { useCreatorContext } from "@/contexts/CreatorContext";
 import { Badge } from "./ui/badge";
 
 export const Navigation = () => {

@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { Users, Search, Loader2, AlertCircle } from "lucide-react";
 import { MOCK_CREATORS } from "@/mocks/mockCreators";
-import { useCreatorContext } from "@/hooks/useCreatorContext";
+import { useCreatorContext } from "@/contexts/CreatorContext";
 
 interface Creator {
   id: string;
