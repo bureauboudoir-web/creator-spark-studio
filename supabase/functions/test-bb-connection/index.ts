@@ -83,18 +83,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Construct ping endpoint - handle trailing slash
+    // Construct status endpoint - handle trailing slash
     const baseUrl = settings.bb_api_url.endsWith('/') 
       ? settings.bb_api_url.slice(0, -1) 
       : settings.bb_api_url;
-    const pingUrl = `${baseUrl}/external/ping`;
-    console.log(`Pinging BB API at: ${pingUrl}`);
+    const statusUrl = `${baseUrl}/external-api-status`;
+    
+    console.log('=== BB API Connection Test ===');
+    console.log('Base URL:', baseUrl);
+    console.log('Full URL:', statusUrl);
+    console.log('API Key length:', settings.bb_api_key?.length || 0);
 
-    // Call BB API ping endpoint
-    const bbResponse = await fetch(pingUrl, {
+    // Call BB API status endpoint
+    const bbResponse = await fetch(statusUrl, {
       method: 'GET',
       headers: {
-        'x-api-key': settings.bb_api_key,
+        'Authorization': `Bearer ${settings.bb_api_key}`,
         'Content-Type': 'application/json',
       },
     });
