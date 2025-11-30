@@ -12,6 +12,7 @@ const ApiSettings = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   const [settings, setSettings] = useState({
     bb_api_url: "",
@@ -75,6 +76,44 @@ const ApiSettings = () => {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    try {
+      setTesting(true);
+      const { data, error } = await supabase.functions.invoke('test-bb-connection');
+      
+      if (error) {
+        toast({
+          title: "Connection Failed",
+          description: "Failed to test BB API connection",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data?.status === 'error') {
+        toast({
+          title: "Connection Failed",
+          description: data.message || "Failed to connect to BB API",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Connection Successful",
+          description: "BB API is reachable and responding",
+        });
+      }
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      toast({
+        title: "Connection Error",
+        description: "Unexpected error testing BB API connection",
+        variant: "destructive",
+      });
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -171,8 +210,25 @@ const ApiSettings = () => {
                     </p>
                   </div>
 
-                  {/* Save Button */}
-                  <div className="flex justify-end pt-4">
+                  {/* Action Buttons */}
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={handleTestConnection}
+                      disabled={testing || !settings.bb_api_url || !settings.bb_api_key}
+                    >
+                      {testing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Testing...
+                        </>
+                      ) : (
+                        <>
+                          <Key className="w-4 h-4 mr-2" />
+                          Test Connection
+                        </>
+                      )}
+                    </Button>
                     <Button
                       onClick={handleSave}
                       disabled={saving}
