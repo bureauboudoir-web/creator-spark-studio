@@ -11,6 +11,18 @@ import { useCreatorContext } from "@/contexts/CreatorContext";
 import { Key, Eye, EyeOff, Loader2, Bug } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
+// Sanitize API key: trim whitespace, remove non-ASCII and hidden characters
+const sanitizeApiKey = (key: string): string => {
+  if (!key) return '';
+  
+  // Remove non-ASCII characters (keeps only printable ASCII 32-126)
+  // This removes non-breaking spaces, zero-width chars, Unicode artifacts
+  const asciiOnly = key.replace(/[^\x20-\x7E]/g, '');
+  
+  // Trim whitespace from both ends
+  return asciiOnly.trim();
+};
+
 const ApiSettings = () => {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
@@ -69,21 +81,29 @@ const ApiSettings = () => {
     try {
       setSaving(true);
       
-      // Build payload - only include API key if user actually modified it
+      // Build payload
       const payload: Record<string, any> = {
         bb_api_url: settings.bb_api_url,
         mock_mode: settings.mock_mode,
       };
       
-      // Only include API key if it was modified by the user
-      if (apiKeyModified && settings.bb_api_key) {
-        payload.bb_api_key = settings.bb_api_key;
+      // Sanitize and include API key if it was modified
+      if (apiKeyModified) {
+        const rawKey = settings.bb_api_key;
+        const sanitizedKey = sanitizeApiKey(rawKey);
+        
+        // Debug logging - show raw and sanitized values
+        console.log('apiKeyField raw:', JSON.stringify(rawKey));
+        console.log('apiKeyField sanitized:', JSON.stringify(sanitizedKey), `(${sanitizedKey.length} chars)`);
+        
+        // Always include the sanitized key (even if empty string)
+        payload.bb_api_key = sanitizedKey;
       }
       
       // Debug logging
       console.log('💾 Saving settings:', {
         bb_api_url: payload.bb_api_url,
-        bb_api_key: payload.bb_api_key ? `[KEY PROVIDED - ${payload.bb_api_key.length} chars]` : '[NOT INCLUDED]',
+        bb_api_key: payload.bb_api_key !== undefined ? `[KEY PROVIDED - ${payload.bb_api_key.length} chars]` : '[NOT INCLUDED]',
         mock_mode: payload.mock_mode,
         apiKeyModified,
       });
@@ -249,6 +269,12 @@ const ApiSettings = () => {
       
       // ===== TEST E: Test save function =====
       console.group('💾 Test E: Save Settings Test');
+      
+      // Log API key sanitization
+      console.log('apiKeyField raw:', JSON.stringify(settings.bb_api_key));
+      const sanitizedDebugKey = sanitizeApiKey(settings.bb_api_key);
+      console.log('apiKeyField sanitized:', JSON.stringify(sanitizedDebugKey), `(${sanitizedDebugKey.length} chars)`);
+      
       const testSettings = {
         ...settings,
         mock_mode: !settings.mock_mode, // Toggle mock_mode
@@ -370,6 +396,13 @@ const ApiSettings = () => {
                           setApiKeyModified(true);
                         }}
                         className="bg-background/50 pr-10"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        data-form-type="other"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
                       />
                       <Button
                         type="button"
