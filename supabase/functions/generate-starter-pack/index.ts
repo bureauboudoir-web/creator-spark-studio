@@ -59,12 +59,15 @@ async function generateConversationStarters(apiKey: string, profile: any): Promi
   const prompt = `You are a professional content strategist working for a private client-management agency.
 
 Creator Context:
-Name: ${profile.full_name || 'Content Creator'}
-Persona: ${profile.persona?.niche || 'Professional content creator'}
-Voice Style: ${profile.persona?.tone_of_voice || 'Friendly and professional'}
-Content Preferences: ${profile.persona?.content_strategy || 'Engaging content'}
-Audience Type: ${profile.onboarding?.audience_size || 'Growing audience'}
-Posting Frequency: ${profile.onboarding?.posting_frequency || 'Regular'}
+Name: ${profile.personal_info?.name || profile.name || 'Content Creator'}
+Persona: ${profile.persona?.character_identity || 'Professional content creator'}
+Tone: ${profile.persona?.tone_of_voice || 'Friendly and professional'}
+Personality Traits: ${profile.persona?.personality_traits?.join(', ') || 'Authentic, engaging'}
+Mood/Energy: ${profile.persona?.mood_energy || 'Warm and inviting'}
+Audience Goals: ${profile.persona?.audience_impression_goals?.join(', ') || 'Build connection'}
+Fan Relationship Style: ${profile.messaging?.fan_relationship_style || 'Personal and attentive'}
+Engagement Hooks: ${profile.messaging?.engagement_hooks?.join(', ') || 'Curiosity, emotion'}
+Boundaries (do not include): ${profile.boundaries?.acceptable_topic_boundaries?.join(', ') || 'Respect privacy'}
 
 TASK: Create 30 conversation openers for private messages to new and existing subscribers.
 
@@ -74,10 +77,10 @@ Groups:
 - High-engagement / curiosity-driven prompts encouraging unlock (10 openers)
 
 Rules:
-- No explicit themes
+- No explicit or graphic content
 - Keep tone personal, friendly, emotional, and human
 - Use first-person conversational style ("I", "you", "we")
-- Safe for work
+- Focus on personality, storytelling, and connection
 - Encourage engagement and response
 - Written in the creator's voice
 
@@ -96,13 +99,18 @@ async function generateVideoScripts(apiKey: string, profile: any): Promise<any> 
   const prompt = `You are a professional content strategist working for a private client-management agency.
 
 Creator Context:
-Name: ${profile.full_name || 'Content Creator'}
-Persona: ${profile.persona?.niche || 'Professional content creator'}
-Voice Style: ${profile.persona?.tone_of_voice || 'Friendly and professional'}
-Content Preferences: ${profile.persona?.content_strategy || 'Engaging content'}
-Menu Items: ${profile.menu_items?.join(', ') || 'Custom content'}
+Name: ${profile.personal_info?.name || profile.name || 'Content Creator'}
+Location: ${profile.personal_info?.location || 'Unknown'}
+Brand Story: ${profile.creator_story?.brand_origin_story || 'Creative storyteller'}
+Character Identity: ${profile.persona?.character_identity || 'Authentic creator'}
+Emotional Style: ${profile.persona?.emotional_style || 'Warm and engaging'}
+Visual Vibe: ${profile.visual_identity?.visual_vibe || 'Stylish and approachable'}
+Storytelling Style: ${profile.messaging?.storytelling_style || 'Personal and emotional'}
+Preferred Themes: ${profile.content_preferences?.preferred_themes?.join(', ') || 'Lifestyle, creativity'}
+Atmosphere: ${profile.content_preferences?.preferred_atmosphere || 'Intimate and engaging'}
+Content to Avoid: ${profile.boundaries?.content_comfort_zones?.join(', ') || 'Nothing inappropriate'}
 
-TASK: Create 5 paid video scripts.
+TASK: Create 5 video scripts.
 
 Each script must include:
 - Title
@@ -112,11 +120,12 @@ Each script must include:
 - Soft call-to-action
 
 Rules:
-- No explicit themes
-- Keep completely non-adult
+- No explicit or graphic content
+- Focus on personality, atmosphere, mood, storytelling
 - Personal and emotional connection
 - Written in creator's voice
 - Encourage viewers to message privately
+- Keep completely Lovable-compliant
 
 Return ONLY a JSON array in this exact format:
 [
@@ -201,25 +210,30 @@ async function generateMenuUpsell(apiKey: string, profile: any): Promise<any> {
   const prompt = `You are a professional content strategist working for a private client-management agency.
 
 Creator Context:
-Name: ${profile.full_name || 'Content Creator'}
-Persona: ${profile.persona?.niche || 'Professional content creator'}
-Voice Style: ${profile.persona?.tone_of_voice || 'Friendly and professional'}
-Menu Items: ${profile.menu_items?.join(', ') || 'Custom content, exclusive access, personal messages'}
+Name: ${profile.personal_info?.name || profile.name || 'Content Creator'}
+Persona: ${profile.persona?.character_identity || 'Professional content creator'}
+Tone: ${profile.persona?.tone_of_voice || 'Friendly and professional'}
+Menu Items: ${profile.pricing?.menu_item_names?.join(', ') || 'Custom content, exclusive access, personal messages'}
+Offer Types: ${profile.pricing?.offer_types?.join(', ') || 'Various offerings'}
+Bundle Style: ${profile.pricing?.bundle_style || 'Premium packages'}
+Value Statements: ${profile.pricing?.value_statements?.join(', ') || 'Exclusive, personalized, intimate'}
+Audience Type: ${profile.content_preferences?.audience_type || 'Engaged fans'}
 
 TASK: Turn the creator's menu into sales copy.
 
 For each menu item:
 - 1-2 sentence description
-- Non-explicit but intimate
-- Focus on attention, fantasy, exclusivity
+- Non-explicit but engaging
+- Focus on attention, creativity, exclusivity, atmosphere
 
 Then create:
 - 3 bundle ideas
 - 3 loyal fan offers
 
 Rules:
-- Safe for work
-- Emphasize personal connection, customization, exclusivity
+- Lovable-compliant - no graphic content
+- Emphasize personal connection, customization, exclusivity, mood
+- Focus on storytelling, emotional appeal, brand identity
 - Written in creator's voice
 
 Return ONLY a JSON object in this exact format:
