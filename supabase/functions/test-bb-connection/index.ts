@@ -13,10 +13,9 @@ const sanitizeUrl = (url: string): string => {
   return cleaned;
 };
 
-// Sanitize API key: remove non-ASCII characters
-const sanitizeApiKey = (key: string): string => {
-  if (!key) return '';
-  return key.replace(/[^\x20-\x7E]/g, '').trim();
+// Validate API key exists and is not empty
+const validateApiKey = (key: string): boolean => {
+  return typeof key === 'string' && key.trim().length > 0;
 };
 
 Deno.serve(async (req) => {
@@ -97,22 +96,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Sanitize URL and API key
+    // Sanitize URL and use raw API key
     const cleanUrl = sanitizeUrl(settings.bb_api_url);
-    const cleanApiKey = sanitizeApiKey(settings.bb_api_key);
-    
-    // Validate API key
-    if (!cleanApiKey) {
-      console.error('❌ API key is empty after sanitization');
+    const apiKey = settings.bb_api_key;
+
+    if (!validateApiKey(apiKey)) {
+      console.error('❌ API key is empty or invalid');
       return new Response(
         JSON.stringify({
           status: 'error',
-          message: 'Invalid API key - please reconfigure in Settings',
-          details: 'API key is empty or contains only invalid characters',
+          statusType: 'MISSING_API_KEY',
+          httpStatus: null,
+          message: 'BB API Key not configured',
         }),
-        { 
+        {
           status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
@@ -124,33 +123,32 @@ Deno.serve(async (req) => {
     const statusUrl = `${baseUrl}/external-api-status`;
     
     console.log('=== BB API Connection Test ===');
-    console.log('Sanitized URL:', cleanUrl);
     console.log('Base URL:', baseUrl);
     console.log('Full URL:', statusUrl);
-    console.log('Sanitized API Key length:', cleanApiKey.length);
+    console.log('Sanitized URL:', cleanUrl);
+    console.log('API Key length:', apiKey.length);
 
-    // Call BB API status endpoint
-    const bbResponse = await fetch(statusUrl, {
+    const response = await fetch(statusUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${cleanApiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
     });
 
-    console.log(`BB API response status: ${bbResponse.status}`);
+    console.log(`BB API response status: ${response.status}`);
 
     // Handle non-200 responses
-    if (!bbResponse.ok) {
-      const errorText = await bbResponse.text();
+    if (!response.ok) {
+      const errorText = await response.text();
       console.error(`BB API error response: ${errorText}`);
       
       return new Response(
         JSON.stringify({
           status: 'error',
           statusType: 'CONNECTION_ERROR',
-          httpStatus: bbResponse.status,
-          message: `BB API returned error (${bbResponse.status}): ${bbResponse.statusText}`,
+          httpStatus: response.status,
+          message: `BB API returned error (${response.status}): ${response.statusText}`,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
@@ -159,7 +157,7 @@ Deno.serve(async (req) => {
     // Try to parse response
     let responseData;
     try {
-      responseData = await bbResponse.json();
+      responseData = await response.json();
       console.log('BB API ping successful:', responseData);
     } catch (parseError) {
       console.error('Failed to parse BB API response:', parseError);
@@ -167,7 +165,7 @@ Deno.serve(async (req) => {
         JSON.stringify({
           status: 'error',
           statusType: 'CONNECTION_ERROR',
-          httpStatus: bbResponse.status,
+          httpStatus: response.status,
           message: 'BB API returned invalid JSON response',
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }

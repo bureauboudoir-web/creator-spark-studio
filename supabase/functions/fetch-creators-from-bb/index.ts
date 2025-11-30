@@ -12,10 +12,9 @@ const sanitizeUrl = (url: string): string => {
   return cleaned;
 };
 
-// Sanitize API key: remove non-ASCII characters
-const sanitizeApiKey = (key: string): string => {
-  if (!key) return '';
-  return key.replace(/[^\x20-\x7E]/g, '').trim();
+// Validate API key exists and is not empty
+const validateApiKey = (key: string): boolean => {
+  return typeof key === 'string' && key.trim().length > 0;
 };
 
 Deno.serve(async (req) => {
@@ -63,13 +62,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Sanitize URL and API key
+    // Sanitize URL and use raw API key
     const cleanUrl = sanitizeUrl(settings.bb_api_url);
-    const cleanApiKey = sanitizeApiKey(settings.bb_api_key);
+    const apiKey = settings.bb_api_key;
     
-    // Validate API key
-    if (!cleanApiKey) {
-      console.error('❌ API key is empty after sanitization');
+    // Validate API key exists
+    if (!validateApiKey(apiKey)) {
+      console.error('❌ API key is empty or invalid');
       return new Response(
         JSON.stringify({
           success: false,
@@ -93,12 +92,12 @@ Deno.serve(async (req) => {
     console.log('Sanitized URL:', cleanUrl);
     console.log('Base URL:', baseUrl);
     console.log('Full URL:', bbApiUrl);
-    console.log('Sanitized API Key length:', cleanApiKey.length);
+    console.log('API Key length:', apiKey.length);
 
     const bbResponse = await fetch(bbApiUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${cleanApiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
     });
