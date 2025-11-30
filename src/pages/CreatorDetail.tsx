@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { ArrowLeft, User, RefreshCw, FileJson, Sparkles, Loader2, AlertCircle, Package, CheckCircle, Edit, RotateCcw, Check, X, Save, Send, History } from "lucide-react";
 import { MOCK_CREATORS, getMockCreatorById } from "@/mocks/mockCreators";
-import { useCreatorContext } from "@/hooks/useCreatorContext";
+import { useCreatorContext } from "@/contexts/CreatorContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CreatorData {

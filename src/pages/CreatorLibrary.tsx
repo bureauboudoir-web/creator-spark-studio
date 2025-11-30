@@ -9,7 +9,7 @@ import { CONTENT_CATEGORIES } from "@/lib/content-categories";
 import { ContentItem } from "@/types/content";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useCreatorContext } from "@/hooks/useCreatorContext";
+import { useCreatorContext } from "@/contexts/CreatorContext";
 import { useSearchParams } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";

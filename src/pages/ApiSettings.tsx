@@ -7,12 +7,14 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { useAuth } from "@/hooks/useAuth";
+import { useCreatorContext } from "@/contexts/CreatorContext";
 import { Key, Eye, EyeOff, Loader2, Bug } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 const ApiSettings = () => {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
+  const { refreshMockModeFromDB, setUsingMockData } = useCreatorContext();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -100,8 +102,15 @@ const ApiSettings = () => {
         description: "API settings saved successfully",
       });
       
+      // Update global mock mode state immediately
+      setUsingMockData(settings.mock_mode);
+      console.log('Global mockMode updated:', settings.mock_mode);
+      
       // Reset modified flag after successful save
       setApiKeyModified(false);
+      
+      // Refresh from DB to ensure consistency and trigger CreatorSelector refresh
+      await refreshMockModeFromDB();
       
       // Reload to get latest values
       await loadSettings();
