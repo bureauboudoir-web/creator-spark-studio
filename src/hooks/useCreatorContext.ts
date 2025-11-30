@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BBCreator } from '@/types/bb-creator';
 
-export type BBApiStatus = 'CONNECTED' | 'MISSING_API_URL' | 'MISSING_API_KEY' | 'CONNECTION_ERROR' | 'UNKNOWN';
+export type BBApiStatus = 'CONNECTED' | 'MISSING_API_URL' | 'MISSING_API_KEY' | 'CONNECTION_ERROR' | 'MOCK_MODE' | 'UNKNOWN';
 
 interface CreatorContextValue {
   selectedCreatorId: string | null;

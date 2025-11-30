@@ -12,11 +12,27 @@ Deno.serve(async (req) => {
   try {
     const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch BB API settings
+    // Fetch BB API settings including mock_mode
     const { data: settings, error: settingsError } = await supabaseClient
       .from('fastcast_content_settings')
-      .select('bb_api_url, bb_api_key')
+      .select('bb_api_url, bb_api_key, mock_mode')
       .single();
+
+    // Check if mock mode is enabled
+    if (settings?.mock_mode === true) {
+      console.log('Mock mode enabled - frontend will use mock data');
+      return new Response(
+        JSON.stringify({
+          success: true,
+          useMock: true,
+          data: [],
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
     if (settingsError || !settings?.bb_api_url || !settings?.bb_api_key) {
       console.error('BB API not configured:', settingsError);
@@ -33,14 +49,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Call BB API to fetch creators
-    const bbApiUrl = `${settings.bb_api_url}/external/creator/list`;
+    // Call BB API to fetch creators using /external-creators endpoint
+    const bbApiUrl = `${settings.bb_api_url}/external-creators`;
     console.log('Calling BB API:', bbApiUrl);
 
     const bbResponse = await fetch(bbApiUrl, {
       method: 'GET',
       headers: {
-        'x-api-key': settings.bb_api_key,
+        'Authorization': `Bearer ${settings.bb_api_key}`,
         'Content-Type': 'application/json',
       },
     });

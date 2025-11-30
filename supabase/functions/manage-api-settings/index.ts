@@ -55,8 +55,7 @@ Deno.serve(async (req) => {
     if (req.method === 'GET') {
       const { data, error } = await serviceClient
         .from('fastcast_content_settings')
-        .select('*')
-        .limit(1)
+        .select('bb_api_url, bb_api_key, mock_mode')
         .single();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
@@ -67,27 +66,28 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Mask API key for security
-      const maskedData = data ? {
-        ...data,
-        bb_api_key: data.bb_api_key ? `****${data.bb_api_key.slice(-4)}` : null,
-      } : null;
-
-      return new Response(JSON.stringify({ data: maskedData }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            bb_api_url: data?.bb_api_url || '',
+            bb_api_key: data?.bb_api_key ? '••••••••' : '',
+            mock_mode: data?.mock_mode ?? true,
+          },
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Handle POST request - update settings
     if (req.method === 'POST') {
       const body = await req.json();
-      const { bb_api_url, bb_api_key } = body;
+      const { bb_api_url, bb_api_key, mock_mode } = body;
 
       // Check if settings exist
       const { data: existing } = await serviceClient
         .from('fastcast_content_settings')
         .select('id')
-        .limit(1)
         .single();
 
       let result;
@@ -96,6 +96,7 @@ Deno.serve(async (req) => {
         const updateData: any = { updated_at: new Date().toISOString() };
         if (bb_api_url !== undefined) updateData.bb_api_url = bb_api_url;
         if (bb_api_key !== undefined) updateData.bb_api_key = bb_api_key;
+        if (mock_mode !== undefined) updateData.mock_mode = mock_mode;
 
         result = await serviceClient
           .from('fastcast_content_settings')
@@ -107,7 +108,11 @@ Deno.serve(async (req) => {
         // Insert new settings
         result = await serviceClient
           .from('fastcast_content_settings')
-          .insert({ bb_api_url, bb_api_key })
+          .insert({ 
+            bb_api_url, 
+            bb_api_key,
+            mock_mode: mock_mode ?? true,
+          })
           .select()
           .single();
       }

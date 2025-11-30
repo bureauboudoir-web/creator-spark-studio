@@ -1,6 +1,9 @@
 // BB Platform API Integration Stubs
 // These are placeholder functions for future API integration with the BB platform
 
+import { supabase } from "@/integrations/supabase/client";
+import { MOCK_CREATORS } from "@/mocks/mockCreators";
+
 export interface Creator {
   creatorId: string;
   name: string;
@@ -14,6 +17,50 @@ export interface Creator {
     youtube?: string;
   };
 }
+
+export interface BBCreatorResult {
+  success: boolean;
+  data: Creator[];
+  useMock: boolean;
+  error?: string;
+}
+
+/**
+ * Fetch creators - uses mock data or live BB API based on settings
+ */
+export const fetchCreators = async (mockMode: boolean): Promise<BBCreatorResult> => {
+  if (mockMode) {
+    // Return mock data
+    const mockData = MOCK_CREATORS.map(mock => ({
+      creatorId: mock.id,
+      name: mock.name,
+      email: mock.email,
+      bio: "",
+      persona: mock.persona.niche,
+      socialLinks: {},
+    }));
+    return { success: true, data: mockData, useMock: true };
+  }
+
+  // Call live API via edge function
+  const { data, error } = await supabase.functions.invoke('fetch-creators-from-bb');
+  
+  if (error || !data?.success) {
+    console.error('Error fetching creators from BB:', error);
+    return { success: false, data: [], useMock: false, error: data?.error || 'Failed to fetch' };
+  }
+
+  const mappedData = (data.data || []).map((creator: any) => ({
+    creatorId: creator.creator_id,
+    name: creator.name,
+    email: creator.email,
+    bio: "",
+    persona: "",
+    socialLinks: {},
+  }));
+
+  return { success: true, data: mappedData, useMock: false };
+};
 
 export interface LibraryItem {
   id: string;

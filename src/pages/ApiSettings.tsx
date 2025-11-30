@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { useAuth } from "@/hooks/useAuth";
 import { Key, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 const ApiSettings = () => {
   const { toast } = useToast();
@@ -19,6 +20,7 @@ const ApiSettings = () => {
   const [settings, setSettings] = useState({
     bb_api_url: "",
     bb_api_key: "",
+    mock_mode: true,
   });
 
   useEffect(() => {
@@ -43,6 +45,7 @@ const ApiSettings = () => {
         setSettings({
           bb_api_url: data.data.bb_api_url || "",
           bb_api_key: data.data.bb_api_key || "",
+          mock_mode: data.data.mock_mode ?? true,
         });
       }
     } catch (error) {
@@ -215,6 +218,21 @@ const ApiSettings = () => {
                     <p className="text-xs text-muted-foreground">
                       Your BB API key for authentication
                     </p>
+                  </div>
+
+                  {/* Mock Mode Toggle */}
+                  <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="mock_mode">Mock Mode</Label>
+                      <p className="text-xs text-muted-foreground">
+                        When enabled, uses mock creator data instead of live BB API
+                      </p>
+                    </div>
+                    <Switch
+                      id="mock_mode"
+                      checked={settings.mock_mode}
+                      onCheckedChange={(checked) => setSettings({ ...settings, mock_mode: checked })}
+                    />
                   </div>
 
                   {/* Action Buttons */}

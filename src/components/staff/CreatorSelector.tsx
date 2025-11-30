@@ -44,6 +44,36 @@ export const CreatorSelector = () => {
       setLoading(true);
       setApiError(null);
 
+      // First check mock_mode setting
+      const { data: settingsData } = await supabase.functions.invoke('manage-api-settings', {
+        method: 'GET',
+      });
+      
+      const mockMode = settingsData?.data?.mock_mode ?? true;
+      
+      if (mockMode) {
+        // Use mock data when mock mode is enabled
+        console.log('Mock mode enabled - using mock creators');
+        setBbApiStatus('MOCK_MODE');
+        setUsingMockData(true);
+        
+        const mockBBCreators: BBCreator[] = MOCK_CREATORS.map((mock) => ({
+          creator_id: mock.id,
+          name: mock.name,
+          email: mock.email,
+          profile_photo_url: mock.avatarUrl,
+          creator_status: mock.status,
+        }));
+        
+        setCreators(mockBBCreators);
+        
+        if (!selectedCreator) {
+          setSelectedCreator(mockBBCreators[0]);
+        }
+        return;
+      }
+
+      // Mock mode is off - try to fetch from BB API
       const { data, error } = await supabase.functions.invoke<BBCreatorResponse>(
         'fetch-creators-from-bb'
       );
@@ -70,7 +100,7 @@ export const CreatorSelector = () => {
       }
 
       if (!data?.success || !data?.data || data.data.length === 0) {
-        // BB API not configured or failed - use mock data
+        // BB API not configured or failed - use mock data as fallback
         console.log('BB API not available, using mock data');
         
         // Determine specific error type

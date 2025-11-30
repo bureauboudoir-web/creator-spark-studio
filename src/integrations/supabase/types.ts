@@ -132,6 +132,7 @@ export type Database = {
           bb_api_url: string | null
           created_at: string | null
           id: string
+          mock_mode: boolean | null
           updated_at: string | null
         }
         Insert: {
@@ -139,6 +140,7 @@ export type Database = {
           bb_api_url?: string | null
           created_at?: string | null
           id?: string
+          mock_mode?: boolean | null
           updated_at?: string | null
         }
         Update: {
@@ -146,6 +148,7 @@ export type Database = {
           bb_api_url?: string | null
           created_at?: string | null
           id?: string
+          mock_mode?: boolean | null
           updated_at?: string | null
         }
         Relationships: []

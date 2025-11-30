@@ -36,12 +36,17 @@ const CreatorList = () => {
   const loadCreators = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.functions.invoke('get-creators', {
+      
+      // First check mock_mode setting
+      const { data: settingsData, error: settingsError } = await supabase.functions.invoke('manage-api-settings', {
         method: 'GET',
       });
-
-      if (error || !data?.success || !data?.data) {
+      
+      const mockMode = settingsData?.data?.mock_mode ?? true;
+      
+      if (mockMode) {
         // Use mock data
+        console.log('Mock mode enabled - using mock creators');
         setUsingMockData(true);
         const mockCreators = MOCK_CREATORS.map((mock) => ({
           id: mock.id,
@@ -52,34 +57,44 @@ const CreatorList = () => {
           onboarding_completed: mock.status === 'completed',
         }));
         setCreators(mockCreators);
-      } else {
-        // Use real data from BB
-        setUsingMockData(false);
-        
-        // Map BB data to our Creator interface
-        const mappedCreators = data.data.map((creator: any) => ({
-          id: creator.id,
-          user_id: creator.user_id,
-          email: creator.email || creator.profiles?.email || 'N/A',
-          full_name: creator.full_name || creator.profiles?.full_name || 'Unknown',
-          avatar_url: creator.avatar_url || creator.profiles?.avatar_url,
-          onboarding_completed: creator.onboarding_completed || creator.profiles?.onboarding_completed || false,
-        }));
-        
-        setCreators(mappedCreators);
+        return;
       }
+      
+      // Mock mode is off - fetch from live API
+      const { data, error } = await supabase.functions.invoke('fetch-creators-from-bb');
+
+      if (error || !data?.success || !data?.data || data.data.length === 0) {
+        console.error('Error loading creators from BB:', error || 'No data returned');
+        // Show empty state, don't fall back to mock
+        setUsingMockData(false);
+        setCreators([]);
+        
+        toast({
+          title: "No creators found",
+          description: "Failed to load creators from BB API",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Use real data from BB
+      setUsingMockData(false);
+      
+      // Map BB data to our Creator interface
+      const mappedCreators = data.data.map((creator: any) => ({
+        id: creator.creator_id,
+        user_id: creator.creator_id,
+        email: creator.email || 'N/A',
+        full_name: creator.name || 'Unknown',
+        avatar_url: creator.profile_photo_url,
+        onboarding_completed: creator.creator_status === 'active',
+      }));
+      
+      setCreators(mappedCreators);
     } catch (error) {
       console.error('Error loading creators:', error);
-      setUsingMockData(true);
-      const mockCreators = MOCK_CREATORS.map((mock) => ({
-        id: mock.id,
-        user_id: mock.id,
-        email: mock.email,
-        full_name: mock.name,
-        avatar_url: mock.avatarUrl,
-        onboarding_completed: mock.status === 'completed',
-      }));
-      setCreators(mockCreators);
+      setUsingMockData(false);
+      setCreators([]);
     } finally {
       setLoading(false);
     }
