@@ -83,8 +83,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Construct ping endpoint
-    const pingUrl = `${settings.bb_api_url}/external/ping`;
+    // Construct ping endpoint - handle trailing slash
+    const baseUrl = settings.bb_api_url.endsWith('/') 
+      ? settings.bb_api_url.slice(0, -1) 
+      : settings.bb_api_url;
+    const pingUrl = `${baseUrl}/external/ping`;
     console.log(`Pinging BB API at: ${pingUrl}`);
 
     // Call BB API ping endpoint
