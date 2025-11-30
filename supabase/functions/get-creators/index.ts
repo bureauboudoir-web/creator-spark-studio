@@ -60,16 +60,18 @@ Deno.serve(async (req) => {
     if (settingsError || !settings || !settings.bb_api_url || !settings.bb_api_key) {
       console.error('Settings fetch error:', settingsError);
       return new Response(JSON.stringify({ 
+        success: false,
         error: 'API settings not configured',
-        useMock: true 
+        details: 'BB API URL and Key must be configured in API Settings'
       }), {
-        status: 200,
+        status: 502,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Call BB's get-all-creators endpoint
-    const bbUrl = `${settings.bb_api_url}/functions/v1/get-all-creators`;
+    // Fix URL construction - remove duplicate /functions/v1/
+    const baseUrl = settings.bb_api_url.replace(/\/+$/, ''); // Remove trailing slashes
+    const bbUrl = `${baseUrl}/get-all-creators`;
     console.log('Calling BB API:', bbUrl);
 
     const bbResponse = await fetch(bbUrl, {
@@ -81,12 +83,15 @@ Deno.serve(async (req) => {
     });
 
     if (!bbResponse.ok) {
-      console.error('BB API error:', bbResponse.status, await bbResponse.text());
+      const errorText = await bbResponse.text();
+      console.error('BB API error:', bbResponse.status, errorText);
       return new Response(JSON.stringify({ 
+        success: false,
         error: 'BB API connection failed',
-        useMock: true 
+        details: `API returned ${bbResponse.status}: ${errorText}`,
+        statusCode: bbResponse.status
       }), {
-        status: 200,
+        status: 502,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -106,10 +111,11 @@ Deno.serve(async (req) => {
     console.error('Error in get-creators:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ 
-      error: errorMessage,
-      useMock: true 
+      success: false,
+      error: 'Internal server error',
+      details: errorMessage
     }), {
-      status: 200,
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

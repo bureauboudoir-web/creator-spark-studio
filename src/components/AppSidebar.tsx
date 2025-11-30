@@ -24,15 +24,15 @@ import {
 
 const mainNavItems = [
   { to: "/dashboard", label: "Dashboard", icon: Home },
-  { to: "/library", label: "Library", icon: Library },
   { to: "/generator", label: "Generator", icon: Sparkles },
+  { to: "/starter-packs/history", label: "Starter Packs", icon: Package },
+  { to: "/library", label: "Library", icon: Library },
 ];
 
 const staffNavItems = [
+  { to: "/creators", label: "Creators", icon: Users },
   { to: "/staff", label: "Staff", icon: Users },
   { to: "/admin", label: "Admin", icon: Settings },
-  { to: "/creators", label: "Creators", icon: Users },
-  { to: "/starter-packs/history", label: "Starter Packs", icon: Package },
   { to: "/api-settings", label: "API Settings", icon: Key },
 ];
 
@@ -107,13 +107,6 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
-          {isStaff && open && (
-            <SidebarMenuItem>
-              <div className="px-2 py-2">
-                <CreatorSelector />
-              </div>
-            </SidebarMenuItem>
-          )}
           <SidebarMenuItem>
             <div className="flex items-center gap-2 px-2 py-2">
               <LanguageSelector />

@@ -1,121 +1,174 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, FileText, Image, Video, Library, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Sparkles, Package, CheckCircle, Clock, Users, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Skeleton } from "@/components/ui/skeleton";
+import { RoleGuard } from "@/components/auth/RoleGuard";
 
-const Dashboard = () => {
+interface DashboardStats {
+  creatorsWaitingReview: number;
+  creatorsReadyForGeneration: number;
+  starterPacksInProgress: number;
+  starterPacksCompleted: number;
+}
+
+export default function Dashboard() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats>({
+    creatorsWaitingReview: 0,
+    creatorsReadyForGeneration: 0,
+    starterPacksInProgress: 0,
+    starterPacksCompleted: 0,
+  });
 
-  const features = [
-    {
-      title: "Create Starter Pack",
-      description: "Generate comprehensive content templates and samples",
-      icon: Sparkles,
-      action: () => navigate("/generator"),
-      gradient: "from-primary to-primary/80"
-    },
-    {
-      title: "Content Library",
-      description: "Browse and manage all your content assets",
-      icon: Library,
-      action: () => navigate("/library"),
-      gradient: "from-accent to-accent/80"
-    },
-    {
-      title: "Templates",
-      description: "Select and customize content templates",
-      icon: FileText,
-      action: () => navigate("/samples"),
-      gradient: "from-accent to-primary"
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch starter packs stats
+      const { data: starterPacks } = await supabase
+        .from('starter_packs')
+        .select('status');
+
+      const inProgress = starterPacks?.filter(sp => sp.status === 'draft').length || 0;
+      const completed = starterPacks?.filter(sp => sp.status === 'completed').length || 0;
+
+      setStats({
+        creatorsWaitingReview: 0, // Will be populated when we have onboarding data
+        creatorsReadyForGeneration: 0, // Will be populated when we have onboarding data
+        starterPacksInProgress: inProgress,
+        starterPacksCompleted: completed,
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const statCards = [
+    {
+      title: "Creators Waiting Onboarding Review",
+      description: "Creators with incomplete onboarding",
+      value: stats.creatorsWaitingReview,
+      icon: AlertCircle,
+      iconColor: "text-warning",
+      iconBg: "bg-warning/10",
+      action: () => navigate("/creators"),
+    },
+    {
+      title: "Creators Ready for Content Generation",
+      description: "Fully onboarded creators",
+      value: stats.creatorsReadyForGeneration,
+      icon: Users,
+      iconColor: "text-accent",
+      iconBg: "bg-accent/10",
+      action: () => navigate("/generator"),
+    },
+    {
+      title: "Starter Packs In Progress",
+      description: "Draft starter packs",
+      value: stats.starterPacksInProgress,
+      icon: Clock,
+      iconColor: "text-primary",
+      iconBg: "bg-primary/10",
+      action: () => navigate("/starter-packs/history"),
+    },
+    {
+      title: "Completed Starter Packs",
+      description: "Successfully generated packs",
+      value: stats.starterPacksCompleted,
+      icon: CheckCircle,
+      iconColor: "text-green-600",
+      iconBg: "bg-green-50 dark:bg-green-950",
+      action: () => navigate("/starter-packs/history"),
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-6 py-12">
-        {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-            Content Generator
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Create, manage, and export professional content for the BB platform
-          </p>
-        </div>
+    <RoleGuard staffOnly>
+      <div className="container mx-auto p-6 space-y-6">
+        <PageHeader 
+          title="Staff Dashboard"
+          subtitle="Manage creators and content generation"
+        />
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-          <Card className="bg-card/50 backdrop-blur border-border/50 hover:shadow-glow transition-all duration-300">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Text Prompts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">24</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card/50 backdrop-blur border-border/50 hover:shadow-glow transition-all duration-300">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Image Themes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">15</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card/50 backdrop-blur border-border/50 hover:shadow-accent transition-all duration-300">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Video Scripts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-accent">12</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {features.map((feature) => (
-            <Card 
-              key={feature.title}
-              className="group bg-card border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-elevated cursor-pointer"
-              onClick={feature.action}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className={`p-3 rounded-xl bg-gradient-to-br ${feature.gradient} shadow-glow`}>
-                    <feature.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Plus className="w-5 h-5" />
-                  </Button>
-                </div>
-                <CardTitle className="text-2xl mt-4">{feature.title}</CardTitle>
-                <CardDescription className="text-base">{feature.description}</CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-
-        {/* CTA Section */}
-        <Card className="mt-12 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div>
-                <h3 className="text-2xl font-bold mb-2">Ready to get started?</h3>
-                <p className="text-muted-foreground">Complete your onboarding to unlock full access</p>
-              </div>
-              <Button 
-                size="lg"
-                className="bg-gradient-primary hover:opacity-90 shadow-glow"
-                onClick={() => navigate("/onboarding")}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i}>
+                <CardHeader className="pb-3">
+                  <Skeleton className="h-4 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-10 w-16" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {statCards.map((card, index) => (
+              <Card 
+                key={index}
+                className="hover:shadow-lg transition-all duration-300 cursor-pointer border-border/50"
+                onClick={card.action}
               >
-                Start Onboarding
-              </Button>
-            </div>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {card.title}
+                    </CardTitle>
+                    <div className={`p-2 rounded-lg ${card.iconBg}`}>
+                      <card.icon className={`w-4 h-4 ${card.iconColor}`} />
+                    </div>
+                  </div>
+                  <CardDescription className="text-xs">
+                    {card.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{card.value}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Quick Actions */}
+        <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Common staff workflows</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-4">
+            <Button onClick={() => navigate("/generator")} className="gap-2">
+              <Sparkles className="w-4 h-4" />
+              Generate Starter Pack
+            </Button>
+            <Button onClick={() => navigate("/library")} variant="outline" className="gap-2">
+              View Content Library
+            </Button>
+            <Button onClick={() => navigate("/starter-packs/history")} variant="outline" className="gap-2">
+              <Package className="w-4 h-4" />
+              View All Starter Packs
+            </Button>
+            <Button onClick={() => navigate("/creators")} variant="outline" className="gap-2">
+              <Users className="w-4 h-4" />
+              Manage Creators
+            </Button>
           </CardContent>
         </Card>
       </div>
-    </div>
+    </RoleGuard>
   );
-};
-
-export default Dashboard;
+}
