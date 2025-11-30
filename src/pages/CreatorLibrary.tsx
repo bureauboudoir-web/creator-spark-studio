@@ -11,9 +11,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCreatorContext } from "@/hooks/useCreatorContext";
 import { useSearchParams } from "react-router-dom";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 export default function CreatorLibrary() {
-  const { selectedCreatorId } = useCreatorContext();
+  const { selectedCreatorId, selectedCreator, usingMockData } = useCreatorContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(
@@ -107,6 +109,15 @@ export default function CreatorLibrary() {
           Manage all your content assets in one place
         </p>
       </div>
+
+      {usingMockData && selectedCreator && (
+        <Alert className="bg-blue-500/10 border-blue-500/20">
+          <Info className="h-4 w-4 text-blue-500" />
+          <AlertDescription className="text-blue-700 dark:text-blue-400">
+            Viewing mock library for: <strong>{selectedCreator.name}</strong>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="flex gap-4">
         <div className="relative flex-1">

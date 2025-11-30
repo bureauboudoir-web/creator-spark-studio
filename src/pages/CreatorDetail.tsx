@@ -12,6 +12,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { ArrowLeft, User, RefreshCw, FileJson, Sparkles, Loader2, AlertCircle, Package, CheckCircle, Edit, RotateCcw, Check, X, Save, Send, History } from "lucide-react";
+import { MOCK_CREATORS, getMockCreatorById } from "@/mocks/mockCreators";
+import { useCreatorContext } from "@/hooks/useCreatorContext";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CreatorData {
   id: string;
@@ -158,11 +161,11 @@ const CreatorDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { usingMockData, setUsingMockData } = useCreatorContext();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [creator, setCreator] = useState<CreatorData | null>(null);
   const [rawJson, setRawJson] = useState<any>(null);
-  const [usingMock, setUsingMock] = useState(false);
   
   // Starter Pack states
   const [starterPack, setStarterPack] = useState<StarterPackData | null>(null);
@@ -204,41 +207,118 @@ const CreatorDetail = () => {
   const loadCreatorData = async () => {
     try {
       setLoading(true);
+      
+      // Check if this is a mock creator ID
+      const mockCreator = getMockCreatorById(id || '');
+      if (mockCreator) {
+        setUsingMockData(true);
+        const mappedCreator: CreatorData = {
+          id: mockCreator.id,
+          user_id: mockCreator.id,
+          email: mockCreator.email,
+          full_name: mockCreator.name,
+          avatar_url: mockCreator.avatarUrl,
+          onboarding_completed: mockCreator.status === 'completed',
+          onboarding: mockCreator.onboarding,
+          persona: {
+            niche: mockCreator.persona.niche,
+            tone_of_voice: mockCreator.persona.tone_of_voice,
+            content_strategy: mockCreator.persona.strategy,
+            key_traits: mockCreator.persona.key_traits,
+            boundaries: mockCreator.persona.boundaries,
+            brand_keywords: mockCreator.persona.brand_keywords,
+          },
+          style_preferences: {
+            preferred_colors: [
+              mockCreator.style_preferences.primary_color,
+              mockCreator.style_preferences.secondary_color,
+              mockCreator.style_preferences.accent_color,
+            ],
+            vibe: mockCreator.style_preferences.vibe,
+            sample_image_urls: mockCreator.style_preferences.sample_image_urls,
+          },
+        };
+        setCreator(mappedCreator);
+        setRawJson(mappedCreator);
+        setLoading(false);
+        return;
+      }
+      
+      // Try to fetch from BB API
       const { data, error } = await supabase.functions.invoke('get-creator-data', {
         method: 'GET',
         body: { creator_id: id },
       });
 
-      if (error) throw error;
-
-      if (data.useMock) {
-        setUsingMock(true);
-        setCreator(MOCK_CREATOR_DATA);
-        setRawJson(MOCK_CREATOR_DATA);
-        toast({
-          title: "Using Mock Data",
-          description: "BB connection unavailable. Displaying sample creator data.",
-          variant: "default",
-        });
-      } else if (data.success && data.data) {
-        setUsingMock(false);
+      if (error || !data?.success || !data?.data) {
+        // Fallback to first mock creator if not found
+        const fallbackMock = MOCK_CREATORS[0];
+        setUsingMockData(true);
+        const mappedCreator: CreatorData = {
+          id: fallbackMock.id,
+          user_id: fallbackMock.id,
+          email: fallbackMock.email,
+          full_name: fallbackMock.name,
+          avatar_url: fallbackMock.avatarUrl,
+          onboarding_completed: fallbackMock.status === 'completed',
+          onboarding: fallbackMock.onboarding,
+          persona: {
+            niche: fallbackMock.persona.niche,
+            tone_of_voice: fallbackMock.persona.tone_of_voice,
+            content_strategy: fallbackMock.persona.strategy,
+            key_traits: fallbackMock.persona.key_traits,
+            boundaries: fallbackMock.persona.boundaries,
+            brand_keywords: fallbackMock.persona.brand_keywords,
+          },
+          style_preferences: {
+            preferred_colors: [
+              fallbackMock.style_preferences.primary_color,
+              fallbackMock.style_preferences.secondary_color,
+              fallbackMock.style_preferences.accent_color,
+            ],
+            vibe: fallbackMock.style_preferences.vibe,
+            sample_image_urls: fallbackMock.style_preferences.sample_image_urls,
+          },
+        };
+        setCreator(mappedCreator);
+        setRawJson(mappedCreator);
+      } else {
+        setUsingMockData(false);
         setCreator(data.data);
         setRawJson(data.data);
-      } else {
-        setUsingMock(true);
-        setCreator(MOCK_CREATOR_DATA);
-        setRawJson(MOCK_CREATOR_DATA);
       }
     } catch (error) {
       console.error('Error loading creator data:', error);
-      setUsingMock(true);
-      setCreator(MOCK_CREATOR_DATA);
-      setRawJson(MOCK_CREATOR_DATA);
-      toast({
-        title: "Connection Error",
-        description: "Using mock creator data. Please check API settings.",
-        variant: "destructive",
-      });
+      const fallbackMock = MOCK_CREATORS[0];
+      setUsingMockData(true);
+      const mappedCreator: CreatorData = {
+        id: fallbackMock.id,
+        user_id: fallbackMock.id,
+        email: fallbackMock.email,
+        full_name: fallbackMock.name,
+        avatar_url: fallbackMock.avatarUrl,
+        onboarding_completed: fallbackMock.status === 'completed',
+        onboarding: fallbackMock.onboarding,
+        persona: {
+          niche: fallbackMock.persona.niche,
+          tone_of_voice: fallbackMock.persona.tone_of_voice,
+          content_strategy: fallbackMock.persona.strategy,
+          key_traits: fallbackMock.persona.key_traits,
+          boundaries: fallbackMock.persona.boundaries,
+          brand_keywords: fallbackMock.persona.brand_keywords,
+        },
+        style_preferences: {
+          preferred_colors: [
+            fallbackMock.style_preferences.primary_color,
+            fallbackMock.style_preferences.secondary_color,
+            fallbackMock.style_preferences.accent_color,
+          ],
+          vibe: fallbackMock.style_preferences.vibe,
+          sample_image_urls: fallbackMock.style_preferences.sample_image_urls,
+        },
+      };
+      setCreator(mappedCreator);
+      setRawJson(mappedCreator);
     } finally {
       setLoading(false);
     }
@@ -469,13 +549,13 @@ const CreatorDetail = () => {
           </div>
 
           {/* Mock Data Warning */}
-          {usingMock && (
+          {usingMockData && (
             <Card className="bg-amber-500/10 border-amber-500/20">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-500" />
                   <p className="text-sm text-amber-700 dark:text-amber-400">
-                    <strong>Using mock creator data</strong> - BB connection unavailable.
+                    <strong>Using mock creator data</strong> – BB API not configured.
                   </p>
                 </div>
               </CardContent>
@@ -879,14 +959,27 @@ const CreatorDetail = () => {
                       </Button>
                       
                       {/* Send to BB button */}
-                      <Button
-                        onClick={handleSendToBB}
-                        disabled={sendingToBB || !starterPack}
-                        className="flex-1 bg-green-600 hover:bg-green-700 gap-2"
-                      >
-                        {sendingToBB ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                        Send to BB
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="flex-1">
+                              <Button
+                                onClick={handleSendToBB}
+                                disabled={usingMockData || sendingToBB || !starterPack}
+                                className="w-full bg-green-600 hover:bg-green-700 gap-2"
+                              >
+                                {sendingToBB ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                Send to BB
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {usingMockData && (
+                            <TooltipContent>
+                              BB sync disabled in mock mode. Configure BB API in Settings to enable.
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                       
                       {/* Regenerate button */}
                       <Button
