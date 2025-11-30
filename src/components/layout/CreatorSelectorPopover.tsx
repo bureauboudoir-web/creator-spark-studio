@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -9,47 +10,34 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check } from "lucide-react";
+import { Check, Search } from "lucide-react";
 import { useCreatorContext } from "@/contexts/CreatorContext";
-import { supabase } from "@/integrations/supabase/client";
 import { BBCreator } from "@/types/bb-creator";
 import { useToast } from "@/hooks/use-toast";
 import { CreatorChip } from "./CreatorChip";
 
 export const CreatorSelectorPopover = () => {
   const [open, setOpen] = useState(false);
-  const [creators, setCreators] = useState<BBCreator[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { selectedCreator, setSelectedCreator, usingMockData } = useCreatorContext();
+  const [searchQuery, setSearchQuery] = useState('');
+  const { 
+    creators,
+    creatorsLoading,
+    selectedCreator, 
+    setSelectedCreator,
+    refreshAllCreators 
+  } = useCreatorContext();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (open) {
-      fetchCreators();
+    if (open && creators.length === 0 && !creatorsLoading) {
+      refreshAllCreators();
     }
-  }, [open, usingMockData]);
+  }, [open]);
 
-  const fetchCreators = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('fetch-creators-from-bb');
-      
-      if (error) throw error;
-      
-      if (data?.data) {
-        setCreators(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching creators:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load creators",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const filteredCreators = creators.filter(c => 
+    c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleSelect = (creator: BBCreator) => {
     setSelectedCreator(creator);
@@ -79,14 +67,23 @@ export const CreatorSelectorPopover = () => {
         </div>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0 bg-popover" align="end">
-        <div className="p-3 border-b">
+        <div className="p-3 border-b space-y-2">
           <h4 className="font-semibold">Select Creator</h4>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground">
             Choose a creator to manage their content
           </p>
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+            <Input
+              placeholder="Search creators..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-7 h-8 text-sm"
+            />
+          </div>
         </div>
         <ScrollArea className="h-[300px]">
-          {loading ? (
+          {creatorsLoading ? (
             <div className="p-2 space-y-1">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center gap-3 p-3 rounded-md">
@@ -99,13 +96,13 @@ export const CreatorSelectorPopover = () => {
                 </div>
               ))}
             </div>
-          ) : creators.length === 0 ? (
+          ) : filteredCreators.length === 0 ? (
             <div className="text-center py-8 text-sm text-muted-foreground">
-              No creators found
+              {searchQuery ? 'No creators match your search' : 'No creators found'}
             </div>
           ) : (
             <div className="p-2 space-y-1">
-              {creators.map((creator) => (
+              {filteredCreators.map((creator) => (
                 <Button
                   key={creator.creator_id}
                   variant="ghost"
@@ -116,7 +113,7 @@ export const CreatorSelectorPopover = () => {
                     <Avatar className="w-10 h-10">
                       <AvatarImage src={creator.profile_photo_url || undefined} />
                       <AvatarFallback>
-                        {creator.name?.charAt(0) || "?"}
+                        {creator.name?.charAt(0)?.toUpperCase() || "?"}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 text-left min-w-0">

@@ -5,111 +5,33 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { Users, Search, Loader2, AlertCircle } from "lucide-react";
-import { MOCK_CREATORS } from "@/mocks/mockCreators";
 import { useCreatorContext } from "@/contexts/CreatorContext";
-
-interface Creator {
-  id: string;
-  user_id: string;
-  email: string;
-  full_name: string;
-  avatar_url?: string;
-  onboarding_completed: boolean;
-}
+import { BBCreator } from "@/types/bb-creator";
 
 const CreatorList = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { usingMockData, setUsingMockData } = useCreatorContext();
-  const [loading, setLoading] = useState(true);
-  const [creators, setCreators] = useState<Creator[]>([]);
+  const { 
+    creators,
+    creatorsLoading,
+    creatorsError,
+    usingMockData,
+    refreshAllCreators 
+  } = useCreatorContext();
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    loadCreators();
+    if (creators.length === 0 && !creatorsLoading) {
+      refreshAllCreators();
+    }
   }, []);
 
-  const loadCreators = async () => {
-    try {
-      setLoading(true);
-      
-      // First check mock_mode setting
-      const { data: settingsData, error: settingsError } = await supabase.functions.invoke('manage-api-settings', {
-        method: 'GET',
-      });
-      
-      const mockMode = settingsData?.data?.mock_mode ?? true;
-      
-      if (mockMode) {
-        // Use mock data
-        console.log('Mock mode enabled - using mock creators');
-        setUsingMockData(true);
-        const mockCreators = MOCK_CREATORS.map((mock) => ({
-          id: mock.id,
-          user_id: mock.id,
-          email: mock.email,
-          full_name: mock.name,
-          avatar_url: mock.avatarUrl,
-          onboarding_completed: mock.status === 'completed',
-        }));
-        setCreators(mockCreators);
-        return;
-      }
-      
-      // Mock mode is off - fetch from live API
-      const { data, error } = await supabase.functions.invoke('fetch-creators-from-bb');
-
-      if (error || !data?.success || !data?.data) {
-        console.error('Error loading creators from BB:', error || 'No data returned');
-        // Show empty state, don't fall back to mock
-        setUsingMockData(false);
-        setCreators([]);
-        
-        if (data?.data?.length === 0) {
-          // Empty result is OK, just show empty state
-          return;
-        }
-        
-        toast({
-          title: "Error",
-          description: "Failed to load creators from BB API",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Use real data from BB
-      setUsingMockData(false);
-      
-      // Map BB data to our Creator interface
-      const mappedCreators = data.data.map((creator: any) => ({
-        id: creator.creator_id,
-        user_id: creator.creator_id,
-        email: creator.email || 'N/A',
-        full_name: creator.name || 'Unknown',
-        avatar_url: creator.profile_photo_url,
-        onboarding_completed: creator.creator_status === 'active',
-      }));
-      
-      setCreators(mappedCreators);
-    } catch (error) {
-      console.error('Error loading creators:', error);
-      setUsingMockData(false);
-      setCreators([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredCreators = creators.filter((creator) => {
+  const filteredCreators = creators.filter((creator: BBCreator) => {
     const query = searchQuery.toLowerCase();
     return (
-      creator.full_name.toLowerCase().includes(query) ||
-      creator.email.toLowerCase().includes(query)
+      creator.name?.toLowerCase().includes(query) ||
+      creator.email?.toLowerCase().includes(query)
     );
   });
 
@@ -163,6 +85,25 @@ const CreatorList = () => {
             </Card>
           )}
 
+          {/* Error State */}
+          {creatorsError && !usingMockData && (
+            <Card className="bg-destructive/10 border-destructive/20">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="w-5 h-5 text-destructive" />
+                    <p className="text-sm text-destructive">
+                      <strong>Error loading creators:</strong> {creatorsError}
+                    </p>
+                  </div>
+                  <Button onClick={refreshAllCreators} variant="outline" size="sm">
+                    Retry
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Search Bar */}
           <Card className="bg-card/50 backdrop-blur border-border/50">
             <CardContent className="pt-6">
@@ -180,7 +121,7 @@ const CreatorList = () => {
           </Card>
 
           {/* Creators Grid */}
-          {loading ? (
+          {creatorsLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
@@ -188,27 +129,29 @@ const CreatorList = () => {
             <Card className="bg-card/50 backdrop-blur border-border/50">
               <CardContent className="pt-6 text-center py-12">
                 <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No creators found</p>
+                <p className="text-muted-foreground">
+                  {searchQuery ? 'No creators match your search' : 'No creators found'}
+                </p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCreators.map((creator) => (
                 <Card 
-                  key={creator.id} 
+                  key={creator.creator_id} 
                   className="bg-card/50 backdrop-blur border-border/50 hover:shadow-lg transition-all duration-300 hover:border-primary/50"
                 >
                   <CardHeader>
                     <div className="flex items-center gap-4">
                       <Avatar className="w-16 h-16">
-                        <AvatarImage src={creator.avatar_url} alt={creator.full_name} />
+                        <AvatarImage src={creator.profile_photo_url || undefined} alt={creator.name} />
                         <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground">
-                          {creator.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          {creator.name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <CardTitle className="text-lg">{creator.full_name}</CardTitle>
-                        <p className="text-sm text-muted-foreground">{creator.email}</p>
+                        <CardTitle className="text-lg">{creator.name || 'Unnamed Creator'}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{creator.email || 'Not provided'}</p>
                       </div>
                     </div>
                   </CardHeader>
@@ -216,14 +159,14 @@ const CreatorList = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Status</span>
                       <Badge 
-                        variant={creator.onboarding_completed ? "default" : "secondary"}
-                        className={creator.onboarding_completed ? "bg-green-500/20 text-green-700 dark:text-green-400" : ""}
+                        variant={creator.creator_status === 'active' ? "default" : "secondary"}
+                        className={creator.creator_status === 'active' ? "bg-green-500/20 text-green-700 dark:text-green-400" : ""}
                       >
-                        {creator.onboarding_completed ? "Completed" : "Incomplete"}
+                        {creator.creator_status || 'unknown'}
                       </Badge>
                     </div>
                     <Button
-                      onClick={() => handleViewDetails(creator.id)}
+                      onClick={() => handleViewDetails(creator.creator_id)}
                       className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
                     >
                       View Details

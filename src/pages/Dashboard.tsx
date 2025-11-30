@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoleGuard } from "@/components/auth/RoleGuard";
+import { useCreatorContext } from "@/contexts/CreatorContext";
+import { BBCreator } from "@/types/bb-creator";
 
 interface DashboardStats {
   creatorsWaitingReview: number;
@@ -18,6 +20,7 @@ interface DashboardStats {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { creators, creatorsLoading, refreshAllCreators } = useCreatorContext();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
     creatorsWaitingReview: 0,
@@ -28,21 +31,18 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardStats();
-  }, []);
+  }, [creators]);
 
   const fetchDashboardStats = async () => {
     try {
       setLoading(true);
 
-      // Fetch creators from BB API
-      const { data: creatorsResponse } = await supabase.functions.invoke('fetch-creators-from-bb');
-      
-      const creators = creatorsResponse?.data || [];
-      const creatorsWaitingReview = creators.filter((c: any) => 
-        c.onboarding_completion > 0 && c.onboarding_completion < 100
+      // Use creators from context
+      const creatorsWaitingReview = creators.filter((c: BBCreator) => 
+        (c.onboarding_completion || 0) > 0 && (c.onboarding_completion || 0) < 100
       ).length;
-      const creatorsReadyForGeneration = creators.filter((c: any) => 
-        c.onboarding_completion === 100
+      const creatorsReadyForGeneration = creators.filter((c: BBCreator) => 
+        (c.onboarding_completion || 0) === 100
       ).length;
 
       // Fetch starter packs stats
