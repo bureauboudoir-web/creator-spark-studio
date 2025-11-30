@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.fetch-creators-from-bb]
 verify_jwt = false
 
+[functions.test-bb-connection]
+verify_jwt = false
+
 [functions.get-creator-data]
 verify_jwt = false
 

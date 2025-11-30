@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { BBCreator } from '@/types/bb-creator';
 
+export type BBApiStatus = 'CONNECTED' | 'MISSING_API_URL' | 'MISSING_API_KEY' | 'CONNECTION_ERROR' | 'UNKNOWN';
+
 interface CreatorContextValue {
   selectedCreatorId: string | null;
   selectedCreator: BBCreator | null;
@@ -9,6 +11,8 @@ interface CreatorContextValue {
   setApiError: (error: string | null) => void;
   usingMockData: boolean;
   setUsingMockData: (value: boolean) => void;
+  bbApiStatus: BBApiStatus;
+  setBbApiStatus: (status: BBApiStatus) => void;
 }
 
 export const useCreatorContext = (): CreatorContextValue => {
@@ -19,6 +23,7 @@ export const useCreatorContext = (): CreatorContextValue => {
 
   const [apiError, setApiError] = useState<string | null>(null);
   const [usingMockData, setUsingMockData] = useState<boolean>(false);
+  const [bbApiStatus, setBbApiStatus] = useState<BBApiStatus>('UNKNOWN');
 
   useEffect(() => {
     if (selectedCreator) {
@@ -41,5 +46,7 @@ export const useCreatorContext = (): CreatorContextValue => {
     setApiError,
     usingMockData,
     setUsingMockData,
+    bbApiStatus,
+    setBbApiStatus,
   };
 };
