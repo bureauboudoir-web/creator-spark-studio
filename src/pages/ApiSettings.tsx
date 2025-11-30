@@ -48,6 +48,17 @@ const ApiSettings = () => {
   const [apiKeyInput, setApiKeyInput] = useState("");     // Real user input
   const [apiKeyModified, setApiKeyModified] = useState(false);  // User changed it
   
+  // Check if key is a valid format (not empty, not masked, starts with expected prefix)
+  const isValidApiKey = (key: string): boolean => {
+    const trimmed = key.trim();
+    // Must not be empty, masked placeholder, or just dots
+    if (!trimmed || trimmed === '••••••••' || /^[•]+$/.test(trimmed)) {
+      return false;
+    }
+    // Check for expected prefix (sk_) or minimum length
+    return trimmed.startsWith('sk_') || trimmed.length >= 20;
+  };
+  
   const [settings, setSettings] = useState({
     bb_api_url: "",
     mock_mode: true,
@@ -108,12 +119,29 @@ const ApiSettings = () => {
         mock_mode: settings.mock_mode,
       };
       
-      // Only include API key if user entered a new one
-      if (apiKeyModified && apiKeyInput.trim()) {
-        payload.bb_api_key = apiKeyInput.trim();
-        console.log('✅ Saving new API key:', `${apiKeyInput.trim().length} chars`);
+      // Only include API key if user entered a NEW, VALID key
+      if (apiKeyModified && apiKeyInput) {
+        const trimmedKey = apiKeyInput.trim();
+        
+        // Reject masked placeholders or empty strings
+        if (!trimmedKey || trimmedKey === '••••••••' || /^[•]+$/.test(trimmedKey)) {
+          console.warn('⚠️ Skipping invalid API key (masked or empty)');
+          toast({
+            title: "Invalid API Key",
+            description: "Cannot save masked or empty API key",
+            variant: "destructive",
+          });
+          setSaving(false);
+          return;
+        } else if (!trimmedKey.startsWith('sk_') && trimmedKey.length < 20) {
+          console.warn('⚠️ API key may be invalid (expected sk_ prefix or min 20 chars)');
+          payload.bb_api_key = trimmedKey;
+        } else {
+          payload.bb_api_key = trimmedKey;
+          console.log('✅ Saving valid API key:', `${trimmedKey.length} chars, prefix: ${trimmedKey.substring(0, 3)}...`);
+        }
       } else {
-        console.log('⏭️ Not updating API key (unchanged)');
+        console.log('⏭️ Not updating API key (unchanged or empty)');
       }
       
       // Debug logging
@@ -144,7 +172,7 @@ const ApiSettings = () => {
       console.log('Global mockMode updated:', settings.mock_mode);
       
       // After successful save, update hasApiKey if we saved a new one
-      if (apiKeyModified && apiKeyInput.trim()) {
+      if (apiKeyModified && apiKeyInput.trim() && isValidApiKey(apiKeyInput)) {
         setHasApiKey(true);
       }
       
@@ -245,96 +273,27 @@ const ApiSettings = () => {
       }
       console.groupEnd();
       
-      // ===== TEST C: Test via edge function =====
-      console.group('🌐 Test C: Test BB Connection via Edge Function');
-      if (!settings.bb_api_url) {
-        console.warn('⚠️ Skipping API test - URL not configured');
-      } else if (!hasApiKey && !apiKeyInput) {
-        console.warn('⚠️ No API key configured or entered');
-        console.log('📤 Testing via edge function (uses DB-stored key)...');
+      // ===== TEST C: Test BB Connection via Edge Function =====
+      console.group('🌐 Test C: Test BB Connection');
+      try {
+        // Always use edge function - it has access to the REAL DB-stored key
+        console.log('📤 Testing via edge function (uses DB-stored real key)...');
         
-        try {
-          const { data: testResult, error: testError } = await supabase.functions.invoke('test-bb-connection');
+        const { data: testResult, error: testError } = await supabase.functions.invoke('test-bb-connection');
+        
+        if (testError) {
+          console.error('❌ Edge function error:', testError);
+        } else {
+          console.log('📥 Edge function result:', testResult);
           
-          if (testError) {
-            console.error('❌ Edge function error:', testError);
-          } else {
-            console.log('📥 Edge function result:', testResult);
-            
-            if (testResult?.status === 'ok') {
-              console.log('🎉 BB API is live and Content Generator is now connected!');
-            }
+          if (testResult?.status === 'ok') {
+            console.log('🎉 BB API is live and Content Generator is now connected!');
+          } else if (testResult?.error) {
+            console.error('❌ BB API connection failed:', testResult.error);
           }
-        } catch (edgeFunctionError) {
-          console.error('❌ Edge function call failed:', edgeFunctionError);
         }
-      } else if (apiKeyModified && apiKeyInput) {
-        // User entered a new key - test with it directly
-        console.log('📤 Testing with newly entered key...');
-        const rawKey = apiKeyInput.trim();
-        const sanitizedUrl = sanitizeUrl(settings.bb_api_url);
-        
-        const baseUrl = sanitizedUrl.endsWith('/') 
-          ? sanitizedUrl 
-          : sanitizedUrl + '/';
-        const statusEndpoint = `${baseUrl}external-api-status`;
-        
-        console.log('📤 Request URL:', statusEndpoint);
-        console.log('📤 Sanitized URL:', sanitizedUrl);
-        console.log('📤 API Key length:', rawKey.length);
-        console.log('📤 Authorization: Bearer [API_KEY]');
-        
-        try {
-          const response = await fetch(statusEndpoint, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${rawKey}`,
-              'Content-Type': 'application/json',
-            },
-          });
-          
-          // ===== TEST D: Print full response =====
-          console.group('📥 Test D: Full Response');
-          console.log('Status Code:', response.status);
-          console.log('Status Text:', response.statusText);
-          console.log('Headers:', Object.fromEntries(response.headers.entries()));
-          
-          const responseText = await response.text();
-          try {
-            const responseJson = JSON.parse(responseText);
-            console.log('✅ Response Body (JSON):', responseJson);
-            
-            if (response.status === 200) {
-              console.log('🎉 BB API is live and Content Generator is now connected!');
-            }
-          } catch {
-            console.log('📄 Response Body (Text):', responseText);
-          }
-          console.groupEnd();
-          
-        } catch (fetchError) {
-          console.error('❌ Fetch Error:', fetchError);
-          console.error('   This could be due to CORS, network issues, or invalid URL');
-        }
-      } else {
-        // Key exists in DB, use edge function
-        console.log('📤 Testing via edge function (DB-stored key)...');
-        
-        try {
-          const { data: testResult, error: testError } = await supabase.functions.invoke('test-bb-connection');
-          
-          if (testError) {
-            console.error('❌ Edge function error:', testError);
-          } else {
-            console.log('📥 Edge function result:', testResult);
-            
-            if (testResult?.status === 'ok') {
-              console.log('🎉 BB API is live and Content Generator is now connected!');
-            }
-          }
-        } catch (edgeFunctionError) {
-          console.error('❌ Edge function call failed:', edgeFunctionError);
-        }
+      } catch (error) {
+        console.error('Test failed:', error);
       }
       console.groupEnd();
       
@@ -345,7 +304,8 @@ const ApiSettings = () => {
       console.log('hasApiKey (from DB):', hasApiKey);
       console.log('apiKeyInput (user entered):', apiKeyInput ? `${apiKeyInput.length} chars` : '(empty)');
       console.log('apiKeyModified:', apiKeyModified);
-      console.log('Will save new key:', apiKeyModified && apiKeyInput.trim().length > 0);
+      console.log('isValidApiKey:', apiKeyInput ? isValidApiKey(apiKeyInput) : 'N/A');
+      console.log('Will save new key:', apiKeyModified && apiKeyInput.trim().length > 0 && isValidApiKey(apiKeyInput));
       
       const testSettings = {
         ...settings,
@@ -490,15 +450,31 @@ const ApiSettings = () => {
                         )}
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {hasApiKey && !apiKeyModified ? (
-                        <span className="text-green-600">✓ API key is configured (enter new value to replace)</span>
-                      ) : apiKeyModified && apiKeyInput ? (
-                        <span className="text-amber-600">⚠ New key entered ({apiKeyInput.length} chars) - will be saved on submit</span>
-                      ) : (
-                        'Your BB API key for authentication'
-                      )}
-                    </p>
+                <p className="text-xs text-muted-foreground">
+                  {hasApiKey && !apiKeyModified ? (
+                    <span className="text-green-600">
+                      ✓ API key is configured and stored securely (enter new value to replace)
+                    </span>
+                  ) : apiKeyModified && apiKeyInput && apiKeyInput.startsWith('sk_') ? (
+                    <span className="text-green-600">
+                      ✓ Valid key format detected ({apiKeyInput.length} chars) - will be saved
+                    </span>
+                  ) : apiKeyModified && apiKeyInput && !apiKeyInput.startsWith('sk_') && apiKeyInput.length >= 20 ? (
+                    <span className="text-amber-600">
+                      ⚠ Key doesn't start with 'sk_' but has valid length - verify format before saving
+                    </span>
+                  ) : apiKeyModified && apiKeyInput && apiKeyInput.length < 20 ? (
+                    <span className="text-red-600">
+                      ⚠ Key too short - expected 'sk_' prefix or min 20 characters
+                    </span>
+                  ) : apiKeyModified && !apiKeyInput.trim() ? (
+                    <span className="text-red-600">
+                      ⚠ Empty key - will NOT overwrite existing key
+                    </span>
+                  ) : (
+                    'Your BB API key for authentication (starts with sk_)'
+                  )}
+                </p>
                   </div>
 
                   {/* Mock Mode Toggle */}
