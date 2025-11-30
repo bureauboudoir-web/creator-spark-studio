@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -45,14 +46,31 @@ interface CreatorData {
 }
 
 interface StarterPackData {
-  profile_bio: string;
-  content_themes: string[];
-  weekly_content_plan: { day: string; content: string }[];
-  ppv_ideas: string[];
-  hook_ideas: string[];
-  do_rules: string[];
-  dont_rules: string[];
-  text_scripts: { name: string; script: string }[];
+  conversation_starters: {
+    warm: string[];
+    playful: string[];
+    high_engagement: string[];
+  };
+  video_scripts: {
+    title: string;
+    hook: string;
+    tone: string;
+    script: string;
+  }[];
+  captions: {
+    short: string[];
+    long: string[];
+  };
+  story_teasers: {
+    title: string;
+    tone: string;
+    text: string;
+  }[];
+  menu_upsell: {
+    items: string[];
+    bundles: string[];
+    loyal_fan_offers: string[];
+  };
 }
 
 const MOCK_CREATOR_DATA: CreatorData = {
@@ -90,71 +108,148 @@ const MOCK_CREATOR_DATA: CreatorData = {
 };
 
 const MOCK_STARTER_PACK: StarterPackData = {
-  profile_bio: "Wellness advocate sharing daily mindfulness practices and self-care rituals. Join me on a journey to balanced living 🌿✨",
-  content_themes: [
-    "Morning Rituals",
-    "Mindful Moments",
-    "Self-Care Sunday",
-    "Wellness Wednesday",
-    "Balance & Growth",
-    "Personal Reflection"
-  ],
-  weekly_content_plan: [
-    { day: "Monday", content: "Morning meditation routine + coffee ritual" },
-    { day: "Tuesday", content: "Wellness tip of the week (e.g., breathing exercises)" },
-    { day: "Wednesday", content: "Behind-the-scenes of my self-care practice" },
-    { day: "Thursday", content: "Q&A about mindfulness and wellness journey" },
-    { day: "Friday", content: "Weekend wellness prep & planning" },
-    { day: "Saturday", content: "Personal story or reflection from the week" },
-    { day: "Sunday", content: "Self-care Sunday routine showcase" }
-  ],
-  ppv_ideas: [
-    "Exclusive guided meditation audio series (20-30 min sessions)",
-    "Private wellness journal prompts & reflection guide",
-    "Morning routine video tutorial with all my favorite practices",
-    "One-on-one wellness chat session for personalized tips",
-    "Monthly self-care bundle with curated practices & resources"
-  ],
-  hook_ideas: [
-    "Want to know the one habit that changed my mornings?",
-    "Here's what nobody tells you about starting a mindfulness practice...",
-    "I tried this wellness routine for 30 days and here's what happened",
-    "The self-care practice everyone needs but nobody talks about",
-    "This is your sign to prioritize yourself today 💫",
-    "POV: You finally figure out what balance actually means"
-  ],
-  do_rules: [
-    "Share authentic personal experiences and growth moments",
-    "Provide actionable wellness tips that followers can implement today",
-    "Respond to comments with encouragement and support",
-    "Disclose all partnerships and sponsored content clearly",
-    "Use calming, positive language that uplifts the community"
-  ],
-  dont_rules: [
-    "Never give medical advice or diagnose health conditions",
-    "Don't endorse products without trying them personally",
-    "Avoid sharing others' private information or stories",
-    "Don't create content when feeling inauthentic or pressured",
-    "Never claim that wellness practices work the same for everyone"
-  ],
-  text_scripts: [
+  conversation_starters: {
+    warm: [
+      "Hi there! I'm so glad you're here 🌸",
+      "Welcome to my space! Excited to connect with you",
+      "Thanks for being here - you just made my day better!",
+      "Hey! I've been looking forward to getting to know you",
+      "So happy to have you here with me ✨",
+      "Hi! Ready to share something special with you today",
+      "Welcome! This is going to be fun 💫",
+      "Hey there! Thanks for stopping by",
+      "Hi beautiful! Glad our paths crossed",
+      "Welcome in! Let's make today amazing together"
+    ],
+    playful: [
+      "Guess what I'm up to right now? 😏",
+      "I have a question for you...",
+      "Want to know a secret?",
+      "Plot twist: today got way more interesting",
+      "Quick - tell me the first thing that comes to mind when you see this 👀",
+      "You know what's funny? I was just thinking about you",
+      "Okay but seriously, can we talk about this?",
+      "Challenge: make me smile in 5 words or less",
+      "Real talk - what's your vibe today?",
+      "Pop quiz: what are you thinking right now?"
+    ],
+    high_engagement: [
+      "I made something just for you - check your messages 💌",
+      "Unlock what I've been working on all week?",
+      "This one's different... want to see?",
+      "I'm curious what you'll think about this exclusive piece",
+      "Behind the scenes access - ready?",
+      "There's more where that came from... interested?",
+      "Want the full story? It's in your DMs",
+      "I saved the best part just for you",
+      "This is too good not to share with you privately",
+      "Ready to see what I've been hiding? 🔓"
+    ]
+  },
+  video_scripts: [
     {
-      name: "Welcome Message",
-      script: "Hi beautiful soul! 🌸 I'm so glad you're here. This space is all about finding balance, practicing self-care, and growing together. Feel free to reach out anytime - I love connecting with this amazing community! ✨"
+      title: "Morning Routine Reveal",
+      hook: "Want to know how I really start my day?",
+      tone: "Warm and inviting",
+      script: "Good morning! So many of you have been asking about my morning routine, and I wanted to show you the real, unfiltered version. This is what truly sets my day up for success - not the perfect Instagram version, but the actual practices that ground me. From my first cup of coffee to the quiet moment I take for myself, I'm letting you in on all of it. Want to see the full routine and maybe try it yourself? Message me and let's talk about creating a morning ritual that works for you."
     },
     {
-      name: "PPV Promo (Meditation Series)",
-      script: "Something special just for you 💫 I've created an exclusive guided meditation series to help you find calm in the chaos. 20-minute sessions perfect for morning or evening practice. Unlock it now and let's breathe together 🧘‍♀️"
+      title: "Behind the Content",
+      hook: "Ever wonder what goes into creating what you see?",
+      tone: "Authentic and curious",
+      script: "Hey! I've been thinking about pulling back the curtain a bit. You see the final result, but there's so much that happens behind the scenes - the planning, the moments of doubt, the creative process. Today I want to share that journey with you, because I think you'll find it interesting. It's not always glamorous, but it's always real. If you're curious about the full behind-the-scenes story and want to be part of this creative process, let me know. I'd love to have you along for the ride."
     },
     {
-      name: "Engagement Prompt",
-      script: "Quick question for you lovely humans ☀️ What's one self-care practice you're trying to be more consistent with? Drop it below - I'd love to hear! Maybe we can support each other on this journey 🤝💕"
+      title: "Personal Story Time",
+      hook: "This is something I haven't shared before...",
+      tone: "Intimate and vulnerable",
+      script: "So I've been holding onto this story for a while, and I think it's time to share it with you. It's personal, it's real, and it taught me something important about myself. I'm not going to lie - it's a little vulnerable to put this out there, but I feel like you'll understand. This experience changed how I see things, and I have a feeling it might resonate with you too. Want to hear the full story and maybe share your own? Message me - I'd love to hear your thoughts."
     },
     {
-      name: "Re-engagement Message",
-      script: "Hey, I've missed you! 🌟 Just wanted to check in and see how you're doing. Remember, it's okay to take breaks and prioritize yourself. What's one thing you're grateful for today? 💛"
+      title: "Weekly Check-In",
+      hook: "Let's catch up - it's been a week!",
+      tone: "Friendly and engaging",
+      script: "Hey you! It's been a minute since we really connected, and I wanted to check in. This week has been such a journey - some incredible highs, a few challenges, and lots of moments I wish I could share with all of you. But here's the thing: I want to know about YOUR week too. What's been going on in your world? The good, the challenging, all of it. Let's make this a real conversation. Drop me a message and let's actually talk - I promise I read and respond to everything."
+    },
+    {
+      title: "Exclusive Preview",
+      hook: "I'm working on something new...",
+      tone: "Exciting and anticipatory",
+      script: "Okay, I'm so excited I can barely contain it. I've been working on something completely new, and I want you to be the first to know about it. This is different from anything I've done before - it's more personal, more intimate, and I think you're really going to love it. I'm not quite ready to share all the details publicly yet, but if you want an exclusive preview and the chance to give me your thoughts, message me. I value your opinion and would love to know what you think before I release it to everyone else."
     }
-  ]
+  ],
+  captions: {
+    short: [
+      "Today's mood: ready for anything ✨",
+      "Check your DMs - left you something special",
+      "Plot twist incoming...",
+      "This moment right here 💫",
+      "Tell me: what's on your mind?",
+      "New week, new energy",
+      "Behind the scenes vibes",
+      "Feeling grateful for you today",
+      "Quick question in your messages",
+      "Ready when you are 🔓"
+    ],
+    long: [
+      "I've been reflecting a lot lately on what really matters, and it keeps coming back to connection - real, genuine connection. Not the surface-level stuff, but the conversations that make you think and feel. That's what I want to create here with you. If you're looking for that same kind of authentic space, you're in the right place. Check your DMs for something I put together just for you.",
+      "There's something magical about the quiet moments, isn't there? Those times when everything slows down and you can just be. I captured one of those moments recently, and it made me think about what I want to share with you differently. Not just the highlight reel, but the real, intimate moments too. If that sounds like something you'd want to be part of, message me. Let's create something special together.",
+      "Here's what nobody tells you about this journey: it's not always what you expect, and that's actually the beautiful part. The surprises, the plot twists, the moments that take your breath away - those are what make it worth it. I want to share more of that journey with you, the unfiltered version. Want in? Check your messages.",
+      "Can we talk about taking chances for a second? I've been pushing myself to be braver lately, to share more, to really let you in. It's scary and exciting all at once. Today feels like one of those brave days, so I'm putting something out there that feels really personal. If you're curious and want to see what I mean, unlock what's waiting for you. Promise it's worth it.",
+      "Some days I wake up with this overwhelming feeling of gratitude for the community we're building together. It's not just about the content - it's about the connection, the support, the real conversations we have. You make this space what it is, and I want to give back to that. I've created something exclusive just for people like you who really engage and care. Check your DMs to see what I mean.",
+      "The energy today is different, can you feel it? There's something in the air that makes me want to do something spontaneous, something a little unexpected. So here's what I'm thinking: I want to give you access to a side of me that I usually keep more private. Not because I have to, but because I want to. Because you've earned that trust. Ready to see what I mean? Let me know.",
+      "Behind every post you see, there's a story - a moment, a decision, a feeling that led to it being created. Today I want to share more of those stories with you. The real context, the messy middle, the journey from idea to reality. If you're someone who appreciates the process as much as the result, I think you'll love what I'm working on. Message me for the behind-the-scenes version.",
+      "I've learned that the best connections come from vulnerability - from being willing to share not just the polished version, but the real, honest truth. So here's my truth today: I'm excited about what we're creating together here. This isn't just me talking at you; it's us building something meaningful. If that resonates with you, if you want to be part of this on a deeper level, I've left something in your messages that I think you'll appreciate.",
+      "There are moments that define us - not the big, dramatic ones always, but the quiet decisions we make about who we want to be and how we want to show up. I'm making one of those decisions right now, to be more open, more present, more connected with the people who matter. You matter. If you want to be part of this next chapter, check what I left for you. I think you'll understand why it's special.",
+      "Real talk: I don't just want followers, I want friends. People who actually care, who engage, who want to be part of something real. If that's you - and I think it is - then let's take this to the next level. I've created some exclusive content that's just for my inner circle, the people who really get it. Want to join? Let me know and I'll make sure you get access."
+    ]
+  },
+  story_teasers: [
+    {
+      title: "The Turning Point",
+      tone: "Reflective and intimate",
+      text: "There was this moment last summer that changed everything for me. I was sitting alone, questioning every choice I'd made, wondering if I was on the right path. And then something shifted - not dramatically, but quietly, like a whisper telling me to trust myself.\n\nWhat followed was a series of small decisions that led me exactly where I needed to be. I learned something about resilience that day, about listening to your intuition even when everyone else is telling you something different. It wasn't easy, and there were moments I almost gave up.\n\nBut here's the thing - that struggle, that uncertainty, it shaped who I am now. And I think there's more to this story that you might relate to. Message me if you want to hear the full version. I have a feeling it might resonate with where you are right now."
+    },
+    {
+      title: "Midnight Thoughts",
+      tone: "Curious and mysterious",
+      text: "It's past midnight and I can't sleep. My mind keeps wandering to this conversation I had earlier - one of those talks that makes you rethink everything you thought you knew. The kind that lingers with you, whispering questions you're not sure you want to answer.\n\nI keep playing it over in my head, wondering what would have happened if I'd said something different, if I'd been braver in that moment. There's something thrilling about the unknown, about standing at the edge of possibility and deciding whether to jump.\n\nI'm not usually this cryptic, but there's something about this that feels too raw to share publicly. If you're curious about what's keeping me up tonight, about the conversation that changed my perspective, send me a message. I'll tell you the whole story."
+    },
+    {
+      title: "Behind Closed Doors",
+      tone: "Authentic and revealing",
+      text: "You know the version of me you see every day? That's real, but it's not everything. Behind closed doors, when the camera's off and it's just me, there's a whole other side that I rarely show. Not because it's hidden, but because it's private, intimate, reserved for people I trust.\n\nThis week I've been thinking about what it means to really let people in, to show the unfiltered version of my life. The messy kitchen, the days I don't feel like being 'on', the vulnerable moments that don't make it into the feed.\n\nI recorded something this morning in one of those raw, real moments. No editing, no filter, just me being completely honest. If you want to see that side, if you're ready for something more authentic, let me know. I think you'll appreciate it."
+    },
+    {
+      title: "The Secret Project",
+      tone: "Exciting and exclusive",
+      text: "For the past few weeks, I've been working on something in secret. It started as just an idea, something I wasn't even sure would work, but it's grown into something I'm genuinely excited about. And I'm finally ready to share it - but not with everyone. Just with the people who really get what I'm trying to do here.\n\nThis project is different. It's more personal, more intimate than anything I've done before. It's about creating something meaningful together, about building a space where we can really connect without all the noise and distractions.\n\nI'm hand-selecting a small group to be part of this from the beginning, to help shape what it becomes. If you're interested in being one of those people, in getting exclusive access to something special, message me. I'll tell you everything."
+    },
+    {
+      title: "Tomorrow's Decision",
+      tone: "Contemplative and inviting",
+      text: "Tomorrow I have to make a decision that's been weighing on me for weeks. It's one of those crossroads moments where both paths look appealing, but choosing one means letting go of the other. I've been going back and forth, making lists, seeking advice, but ultimately I know it comes down to what feels right in my gut.\n\nThe interesting part? This decision affects not just me, but potentially this whole space we've created together. It could change things in ways I'm both excited and nervous about. Part of me wants to involve you in this decision, to hear your perspective before I commit.\n\nI've recorded a longer video talking through both options, my fears, and what I'm really hoping for. If you're someone who likes being part of the journey, not just watching from the sidelines, message me. I'd love your input before tomorrow."
+    }
+  ],
+  menu_upsell: {
+    items: [
+      "Personalized wellness sessions - imagine having dedicated one-on-one time where it's just us, focusing entirely on what you need. No distractions, complete attention, creating something meaningful together.",
+      "Exclusive content packages - access to everything I create before anyone else sees it. Be the first to know, the first to experience, the first to give feedback that actually shapes what comes next.",
+      "Custom experiences - tell me exactly what you're looking for, and I'll create it specifically for you. Whether it's a video, a message, or something completely unique, this is about making your vision come to life.",
+      "Behind-the-scenes access - see everything that doesn't make it to the public feed. The process, the real moments, the unfiltered version of my day-to-day life.",
+      "Monthly exclusive membership - become part of my inner circle with ongoing access to exclusive content, priority messaging, and special perks designed just for my most dedicated supporters."
+    ],
+    bundles: [
+      "The Complete Experience: Get everything - exclusive content access, custom creations, priority messaging, and monthly surprises. This is the all-access pass to everything I offer, packaged together with a special discount for committing to the full experience.",
+      "The Starter Collection: Perfect if you're new here and want to explore what I offer. Includes your first exclusive content package, one custom creation, and a personal welcome session so we can get to know each other properly.",
+      "The Loyalty Package: For those who've been here supporting from the beginning. Enhanced access, bonus content, priority for new releases, and special pricing on everything because your support means everything to me."
+    ],
+    loyal_fan_offers: [
+      "VIP Priority Access: You're one of my core supporters, and that deserves recognition. Get first access to everything new, priority in message responses, and exclusive previews before anyone else sees them. Plus, special pricing on all custom requests because loyalty matters.",
+      "The Insider Experience: As someone who's been consistently engaged, you get exclusive monthly bonus content that nobody else receives, behind-the-scenes decision-making input, and the ability to request custom content at a special rate reserved only for insiders.",
+      "Lifetime Appreciation Membership: For the supporters who've been here through everything - enjoy permanent discounts on all content, unlimited priority messaging, quarterly exclusive video calls, and first access to any new offerings I create. This is my way of saying thank you for believing in what we're building together."
+    ]
+  }
 };
 
 const CreatorDetail = () => {
@@ -239,7 +334,7 @@ const CreatorDetail = () => {
           },
         };
         setCreator(mappedCreator);
-        setRawJson(mappedCreator);
+        setRawJson({ ...mappedCreator, menu_items: mockCreator.menu_items });
         setLoading(false);
         return;
       }
@@ -337,15 +432,46 @@ const CreatorDetail = () => {
   // Starter Pack handlers
   const generateStarterPack = async (creatorId: string) => {
     setGenerating(true);
-    // Simulate AI generation with a delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setStarterPack(MOCK_STARTER_PACK);
-    setEditedPack(MOCK_STARTER_PACK);
-    setGenerating(false);
-    toast({
-      title: "Starter Pack Generated",
-      description: "Review the content below before approving.",
-    });
+    try {
+      const mockCreator = getMockCreatorById(id || '');
+      const creatorProfile = {
+        full_name: creator?.full_name,
+        persona: creator?.persona,
+        onboarding: creator?.onboarding,
+        menu_items: mockCreator?.menu_items || [
+          "Custom content",
+          "Exclusive access",
+          "Personal messages",
+          "Behind-the-scenes",
+          "Monthly membership"
+        ]
+      };
+
+      const { data, error } = await supabase.functions.invoke('generate-starter-pack', {
+        body: { creatorProfile }
+      });
+
+      if (error) throw error;
+
+      setStarterPack(data);
+      setEditedPack(data);
+      toast({
+        title: "Starter Pack Generated",
+        description: "Review the content below before saving.",
+      });
+    } catch (error: any) {
+      console.error('Generation error:', error);
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate starter pack. Please try again.",
+        variant: "destructive",
+      });
+      // Fallback to mock data
+      setStarterPack(MOCK_STARTER_PACK);
+      setEditedPack(MOCK_STARTER_PACK);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const handleRegenerate = async () => {
@@ -805,149 +931,169 @@ const CreatorDetail = () => {
                 </div>
               )}
 
-              {/* Section B - Starter Pack Preview */}
+              {/* Section B - Starter Pack Preview with 5 Accordions */}
               {starterPack && (
                 <div className="space-y-6">
-                  {/* Profile Bio */}
-                  <div className="space-y-2">
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                      Suggested Profile Bio
-                    </h3>
-                    {editMode ? (
-                      <Textarea
-                        value={editedPack?.profile_bio || ''}
-                        onChange={(e) => updateEditedField('profile_bio', e.target.value)}
-                        className="min-h-[80px]"
-                      />
-                    ) : (
-                      <p className="text-sm bg-muted/50 p-4 rounded-lg">{starterPack.profile_bio}</p>
-                    )}
-                  </div>
-
-                  <Separator />
-
-                  {/* Content Themes */}
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">Content Themes</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {starterPack.content_themes.map((theme, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-sm">
-                          {theme}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Weekly Content Plan */}
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">Weekly Content Plan</h3>
-                    <div className="space-y-2">
-                      {starterPack.weekly_content_plan.map((item, idx) => (
-                        <div key={idx} className="flex gap-3 p-3 bg-muted/30 rounded-lg">
-                          <span className="font-medium text-primary min-w-[100px]">{item.day}</span>
-                          <span className="text-sm">{item.content}</span>
+                  <Accordion type="multiple" defaultValue={["task1", "task2", "task3", "task4", "task5"]} className="w-full">
+                    {/* TASK 1: Conversation Starters */}
+                    <AccordionItem value="task1">
+                      <AccordionTrigger className="text-lg font-semibold">
+                        💬 Conversation Starters (30 openers)
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-4 pt-4">
+                        {/* Warm/Welcoming */}
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-primary">Warm & Welcoming (10)</h4>
+                          <div className="space-y-2">
+                            {starterPack.conversation_starters.warm.map((opener, idx) => (
+                              <div key={idx} className="p-3 bg-muted/30 rounded-lg text-sm">
+                                {opener}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* PPV Ideas */}
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">PPV Ideas</h3>
-                    <ul className="space-y-2">
-                      {starterPack.ppv_ideas.map((idea, idx) => (
-                        <li key={idx} className="flex gap-2 text-sm">
-                          <span className="text-primary">•</span>
-                          <span>{idea}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <Separator />
-
-                  {/* Hook Ideas */}
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">Hook Ideas</h3>
-                    <div className="space-y-2">
-                      {starterPack.hook_ideas.map((hook, idx) => (
-                        <div key={idx} className="p-3 bg-accent/10 border-l-4 border-accent rounded-r-lg">
-                          <p className="text-sm italic">"{hook}"</p>
+                        <Separator />
+                        {/* Playful/Friendly */}
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-primary">Playful & Friendly (10)</h4>
+                          <div className="space-y-2">
+                            {starterPack.conversation_starters.playful.map((opener, idx) => (
+                              <div key={idx} className="p-3 bg-muted/30 rounded-lg text-sm">
+                                {opener}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Do/Don't Rules */}
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">Content Guidelines</h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {/* Do Rules */}
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-green-600 dark:text-green-400 flex items-center gap-2">
-                          <Check className="w-4 h-4" />
-                          Do's
-                        </h4>
-                        <ul className="space-y-2">
-                          {starterPack.do_rules.map((rule, idx) => (
-                            <li key={idx} className="flex gap-2 text-sm">
-                              <Check className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                              <span>{rule}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      {/* Don't Rules */}
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-red-600 dark:text-red-400 flex items-center gap-2">
-                          <X className="w-4 h-4" />
-                          Don'ts
-                        </h4>
-                        <ul className="space-y-2">
-                          {starterPack.dont_rules.map((rule, idx) => (
-                            <li key={idx} className="flex gap-2 text-sm">
-                              <X className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                              <span>{rule}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Text Scripts */}
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">Text Scripts</h3>
-                    <div className="space-y-3">
-                      {starterPack.text_scripts.map((script, idx) => (
-                        <div key={idx} className="space-y-1 p-4 bg-muted/30 rounded-lg">
-                          <h4 className="text-sm font-medium text-primary">{script.name}</h4>
-                          {editMode ? (
-                            <Textarea
-                              value={editedPack?.text_scripts[idx]?.script || ''}
-                              onChange={(e) => {
-                                const newScripts = [...(editedPack?.text_scripts || [])];
-                                newScripts[idx] = { ...newScripts[idx], script: e.target.value };
-                                updateEditedField('text_scripts', newScripts);
-                              }}
-                              className="min-h-[60px] text-sm"
-                            />
-                          ) : (
-                            <p className="text-sm text-muted-foreground">{script.script}</p>
-                          )}
+                        <Separator />
+                        {/* High Engagement */}
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-primary">High Engagement (10)</h4>
+                          <div className="space-y-2">
+                            {starterPack.conversation_starters.high_engagement.map((opener, idx) => (
+                              <div key={idx} className="p-3 bg-muted/30 rounded-lg text-sm">
+                                {opener}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    {/* TASK 2: Video Scripts */}
+                    <AccordionItem value="task2">
+                      <AccordionTrigger className="text-lg font-semibold">
+                        🎬 Video Scripts (5 scripts)
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-4 pt-4">
+                        {starterPack.video_scripts.map((script, idx) => (
+                          <div key={idx} className="p-4 bg-muted/30 rounded-lg space-y-2">
+                            <div className="flex items-start justify-between">
+                              <h4 className="font-semibold text-primary">{script.title}</h4>
+                              <Badge variant="outline">{script.tone}</Badge>
+                            </div>
+                            <p className="text-sm font-medium italic text-muted-foreground">Hook: "{script.hook}"</p>
+                            <Separator className="my-2" />
+                            <p className="text-sm whitespace-pre-wrap">{script.script}</p>
+                          </div>
+                        ))}
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    {/* TASK 3: Feed Captions */}
+                    <AccordionItem value="task3">
+                      <AccordionTrigger className="text-lg font-semibold">
+                        📝 Feed Captions (20 captions)
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-4 pt-4">
+                        {/* Short Captions */}
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-primary">Short Captions (under 20 words)</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {starterPack.captions.short.map((caption, idx) => (
+                              <div key={idx} className="p-3 bg-muted/30 rounded-lg text-sm">
+                                {caption}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <Separator />
+                        {/* Long Captions */}
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-primary">Long Captions (40-80 words)</h4>
+                          <div className="space-y-2">
+                            {starterPack.captions.long.map((caption, idx) => (
+                              <div key={idx} className="p-3 bg-muted/30 rounded-lg text-sm">
+                                {caption}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    {/* TASK 4: Story Teasers */}
+                    <AccordionItem value="task4">
+                      <AccordionTrigger className="text-lg font-semibold">
+                        📖 Story Teasers (5 mini stories)
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-4 pt-4">
+                        {starterPack.story_teasers.map((story, idx) => (
+                          <div key={idx} className="p-4 bg-muted/30 rounded-lg space-y-2">
+                            <div className="flex items-start justify-between">
+                              <h4 className="font-semibold text-primary">{story.title}</h4>
+                              <Badge variant="outline">{story.tone}</Badge>
+                            </div>
+                            <Separator className="my-2" />
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{story.text}</p>
+                          </div>
+                        ))}
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    {/* TASK 5: Menu & Upsell Copy */}
+                    <AccordionItem value="task5">
+                      <AccordionTrigger className="text-lg font-semibold">
+                        💰 Menu & Upsell Copy
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-4 pt-4">
+                        {/* Menu Items */}
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-primary">Menu Items</h4>
+                          <div className="space-y-2">
+                            {starterPack.menu_upsell.items.map((item, idx) => (
+                              <div key={idx} className="p-3 bg-muted/30 rounded-lg text-sm">
+                                {item}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <Separator />
+                        {/* Bundle Ideas */}
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-primary">Bundle Ideas</h4>
+                          <div className="space-y-2">
+                            {starterPack.menu_upsell.bundles.map((bundle, idx) => (
+                              <div key={idx} className="p-3 bg-accent/10 border-l-4 border-accent rounded-r-lg text-sm">
+                                {bundle}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <Separator />
+                        {/* Loyal Fan Offers */}
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-primary">Loyal Fan Offers</h4>
+                          <div className="space-y-2">
+                            {starterPack.menu_upsell.loyal_fan_offers.map((offer, idx) => (
+                              <div key={idx} className="p-3 bg-green-500/10 border-l-4 border-green-500 rounded-r-lg text-sm">
+                                {offer}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
 
                   {/* Section C - Staff Review Actions */}
                   <Separator />
@@ -1009,15 +1155,7 @@ const CreatorDetail = () => {
                         Regenerate
                       </Button>
                       
-                      {/* Edit button */}
-                      <Button
-                        onClick={handleEditToggle}
-                        variant="outline"
-                        className="gap-2"
-                      >
-                        <Edit className="w-4 h-4" />
-                        {editMode ? 'Done Editing' : 'Edit'}
-                      </Button>
+                      {/* Edit button - removed since Accordion handles editing better */}
                     </div>
 
                     {/* Status indicator */}

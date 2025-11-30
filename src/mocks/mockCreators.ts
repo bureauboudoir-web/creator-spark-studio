@@ -26,6 +26,7 @@ export interface MockCreator {
     vibe: string;
     sample_image_urls: string[];
   };
+  menu_items: string[];
 }
 
 export const MOCK_CREATORS: MockCreator[] = [
@@ -60,6 +61,13 @@ export const MOCK_CREATORS: MockCreator[] = [
         "https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=400",
       ],
     },
+    menu_items: [
+      "Guided meditation sessions",
+      "Personalized wellness consultation",
+      "Weekly mindfulness journal prompts",
+      "Behind-the-scenes wellness routine",
+      "Custom self-care plan"
+    ],
   },
   {
     id: "mock-2",
@@ -92,6 +100,13 @@ export const MOCK_CREATORS: MockCreator[] = [
         "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400",
       ],
     },
+    menu_items: [
+      "Custom workout plan",
+      "Nutrition consultation",
+      "Form check video review",
+      "Monthly transformation coaching",
+      "Exclusive training tutorial"
+    ],
   },
   {
     id: "mock-3",
@@ -124,6 +139,13 @@ export const MOCK_CREATORS: MockCreator[] = [
         "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400",
       ],
     },
+    menu_items: [
+      "Personalized makeup tutorial",
+      "Style consultation video call",
+      "Product review and recommendations",
+      "Behind-the-scenes fashion shoot",
+      "Seasonal wardrobe planning"
+    ],
   },
   {
     id: "mock-4",
@@ -156,6 +178,13 @@ export const MOCK_CREATORS: MockCreator[] = [
         "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400",
       ],
     },
+    menu_items: [
+      "Custom gaming tutorial",
+      "Tech setup consultation",
+      "1-on-1 gaming session",
+      "Personalized gear recommendations",
+      "Exclusive gameplay strategy guide"
+    ],
   },
 ];
 
