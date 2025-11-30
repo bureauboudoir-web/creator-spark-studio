@@ -11,10 +11,11 @@ interface CreatorMetadataCardProps {
 
 export const CreatorMetadataCard = ({ creator }: CreatorMetadataCardProps) => {
   const initials = creator.name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase();
+    ? creator.name.split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+    : 'C';
 
   const completion = creator.onboarding_completion || 0;
 
@@ -33,7 +34,7 @@ export const CreatorMetadataCard = ({ creator }: CreatorMetadataCardProps) => {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-1">
-            <h3 className="font-semibold text-lg">{creator.name}</h3>
+            <h3 className="font-semibold text-lg">{creator.name || 'Unnamed Creator'}</h3>
             <p className="text-sm text-muted-foreground">{creator.email}</p>
             <Badge variant={creator.creator_status === 'active' ? 'default' : 'secondary'}>
               {creator.creator_status}
