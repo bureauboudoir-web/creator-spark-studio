@@ -176,20 +176,24 @@ const CreatorDetail = () => {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {creator.persona?.character_identity && (
-                  <Badge variant="outline">{creator.persona.character_identity}</Badge>
+                {(creator.persona_character?.character_identity || creator.persona?.character_identity) && (
+                  <Badge variant="outline">{creator.persona_character?.character_identity || creator.persona?.character_identity}</Badge>
                 )}
-                {creator.persona?.tone_of_voice && (
-                  <Badge variant="outline">{creator.persona.tone_of_voice}</Badge>
+                {(creator.tone_of_voice || creator.persona_character?.tone_of_voice || creator.persona?.tone_of_voice) && (
+                  <Badge variant="outline">{creator.tone_of_voice || creator.persona_character?.tone_of_voice || creator.persona?.tone_of_voice}</Badge>
                 )}
-                {creator.content_preferences?.posting_frequency && (
-                  <Badge variant="outline">{creator.content_preferences.posting_frequency}</Badge>
+                {creator.niche && (
+                  <Badge variant="outline">{creator.niche}</Badge>
+                )}
+                {(creator.posting_frequency || creator.content_preferences?.posting_frequency) && (
+                  <Badge variant="outline">{creator.posting_frequency || creator.content_preferences?.posting_frequency}</Badge>
                 )}
               </div>
 
-              {creator.persona?.personality_traits && creator.persona.personality_traits.length > 0 && (
+              {(creator.persona_character?.personality_traits || creator.persona?.personality_traits) && 
+               (creator.persona_character?.personality_traits || creator.persona?.personality_traits || []).length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {creator.persona.personality_traits.map((trait, idx) => (
+                  {(creator.persona_character?.personality_traits || creator.persona?.personality_traits || []).map((trait, idx) => (
                     <Badge key={idx} variant="secondary">{trait}</Badge>
                   ))}
                 </div>
@@ -230,7 +234,7 @@ const CreatorDetail = () => {
           </Card>
 
           {/* Personal Information */}
-          {creator.personal_info && (
+          {(creator.personal_information || creator.personal_info) && (
             <Card>
               <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
@@ -238,24 +242,106 @@ const CreatorDetail = () => {
               <CardContent className="space-y-3">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Name</p>
-                  <p>{creator.personal_info.name || "Not provided yet"}</p>
+                  <p>{creator.personal_information?.name || creator.personal_info?.name || "Not provided yet"}</p>
                 </div>
-                {creator.personal_info.age && (
+                {(creator.personal_information?.age || creator.personal_info?.age) && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Age</p>
-                    <p>{creator.personal_info.age}</p>
+                    <p>{creator.personal_information?.age || creator.personal_info?.age}</p>
                   </div>
                 )}
-                {creator.personal_info.location && (
+                {(creator.personal_information?.location || creator.personal_info?.location) && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Location</p>
-                    <p>{creator.personal_info.location}</p>
+                    <p>{creator.personal_information?.location || creator.personal_info?.location}</p>
                   </div>
                 )}
-                {creator.personal_info.short_bio && (
+                {(creator.personal_information?.short_bio || creator.personal_info?.short_bio) && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Bio</p>
-                    <p className="text-sm">{creator.personal_info.short_bio}</p>
+                    <p className="text-sm">{creator.personal_information?.short_bio || creator.personal_info?.short_bio}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Physical Description */}
+          {creator.physical_description && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Physical Description</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {creator.physical_description.general_appearance && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">General Appearance</p>
+                    <p className="text-sm">{creator.physical_description.general_appearance}</p>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-3">
+                  {creator.physical_description.height && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Height</p>
+                      <p className="text-sm">{creator.physical_description.height}</p>
+                    </div>
+                  )}
+                  {creator.physical_description.body_type && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Body Type</p>
+                      <p className="text-sm">{creator.physical_description.body_type}</p>
+                    </div>
+                  )}
+                  {creator.physical_description.hair_color && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Hair Color</p>
+                      <p className="text-sm">{creator.physical_description.hair_color}</p>
+                    </div>
+                  )}
+                  {creator.physical_description.eye_color && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Eye Color</p>
+                      <p className="text-sm">{creator.physical_description.eye_color}</p>
+                    </div>
+                  )}
+                </div>
+                {creator.physical_description.distinguishing_features && creator.physical_description.distinguishing_features.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Distinguishing Features</p>
+                    <div className="flex flex-wrap gap-2">
+                      {creator.physical_description.distinguishing_features.map((feature, idx) => (
+                        <Badge key={idx} variant="outline">{feature}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Amsterdam Story */}
+          {creator.amsterdam_story && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Amsterdam Story</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {creator.amsterdam_story.origin_story && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Origin Story</p>
+                    <p className="text-sm">{creator.amsterdam_story.origin_story}</p>
+                  </div>
+                )}
+                {creator.amsterdam_story.neighborhood && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Neighborhood</p>
+                    <p className="text-sm">{creator.amsterdam_story.neighborhood}</p>
+                  </div>
+                )}
+                {creator.amsterdam_story.city_connection && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">City Connection</p>
+                    <p className="text-sm">{creator.amsterdam_story.city_connection}</p>
                   </div>
                 )}
               </CardContent>
@@ -263,58 +349,103 @@ const CreatorDetail = () => {
           )}
 
           {/* Creator Persona */}
-          {creator.persona && (
+          {(creator.persona_character || creator.persona) && (
             <Card>
               <CardHeader>
                 <CardTitle>Creator Persona</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {creator.persona.tone_of_voice && (
+                {(creator.tone_of_voice || creator.persona_character?.tone_of_voice || creator.persona?.tone_of_voice) && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Tone of Voice</p>
-                    <p className="text-sm">{creator.persona.tone_of_voice}</p>
+                    <p className="text-sm">{creator.tone_of_voice || creator.persona_character?.tone_of_voice || creator.persona?.tone_of_voice}</p>
                   </div>
                 )}
-                {creator.persona.character_identity && (
+                {(creator.persona_character?.character_identity || creator.persona?.character_identity) && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Character Identity</p>
-                    <p className="text-sm">{creator.persona.character_identity}</p>
+                    <p className="text-sm">{creator.persona_character?.character_identity || creator.persona?.character_identity}</p>
                   </div>
                 )}
-                {creator.persona.mood_energy && (
+                {(creator.persona_character?.mood_energy || creator.persona?.mood_energy) && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Mood/Energy</p>
-                    <p className="text-sm">{creator.persona.mood_energy}</p>
+                    <p className="text-sm">{creator.persona_character?.mood_energy || creator.persona?.mood_energy}</p>
                   </div>
                 )}
-                {creator.persona.writing_style && (
+                {(creator.persona_character?.writing_style || creator.persona?.writing_style) && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Writing Style</p>
-                    <p className="text-sm">{creator.persona.writing_style}</p>
+                    <p className="text-sm">{creator.persona_character?.writing_style || creator.persona?.writing_style}</p>
                   </div>
                 )}
-                {creator.persona.emotional_style && (
+                {(creator.persona_character?.emotional_style || creator.persona?.emotional_style) && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Emotional Style</p>
-                    <p className="text-sm">{creator.persona.emotional_style}</p>
+                    <p className="text-sm">{creator.persona_character?.emotional_style || creator.persona?.emotional_style}</p>
                   </div>
                 )}
-                {creator.persona.personality_traits && creator.persona.personality_traits.length > 0 && (
+                {(creator.persona_character?.personality_traits || creator.persona?.personality_traits) && 
+                 (creator.persona_character?.personality_traits || creator.persona?.personality_traits || []).length > 0 && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-2">Personality Traits</p>
                     <div className="flex flex-wrap gap-2">
-                      {creator.persona.personality_traits.map((trait, idx) => (
+                      {(creator.persona_character?.personality_traits || creator.persona?.personality_traits || []).map((trait, idx) => (
                         <Badge key={idx} variant="secondary">{trait}</Badge>
                       ))}
                     </div>
                   </div>
                 )}
-                {creator.persona.audience_impression_goals && creator.persona.audience_impression_goals.length > 0 && (
+                {(creator.persona_character?.audience_impression_goals || creator.persona?.audience_impression_goals) && 
+                 (creator.persona_character?.audience_impression_goals || creator.persona?.audience_impression_goals || []).length > 0 && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-2">Audience Impression Goals</p>
                     <div className="flex flex-wrap gap-2">
-                      {creator.persona.audience_impression_goals.map((goal, idx) => (
+                      {(creator.persona_character?.audience_impression_goals || creator.persona?.audience_impression_goals || []).map((goal, idx) => (
                         <Badge key={idx} variant="outline">{goal}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Audience Profile */}
+          {creator.audience_profile && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Audience Profile</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {creator.audience_profile.engagement_style && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Engagement Style</p>
+                    <p className="text-sm">{creator.audience_profile.engagement_style}</p>
+                  </div>
+                )}
+                {creator.audience_profile.community_tone && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Community Tone</p>
+                    <p className="text-sm">{creator.audience_profile.community_tone}</p>
+                  </div>
+                )}
+                {creator.audience_profile.target_demographics && creator.audience_profile.target_demographics.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Target Demographics</p>
+                    <div className="flex flex-wrap gap-2">
+                      {creator.audience_profile.target_demographics.map((demo, idx) => (
+                        <Badge key={idx} variant="secondary">{demo}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {creator.audience_profile.audience_interests && creator.audience_profile.audience_interests.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Audience Interests</p>
+                    <div className="flex flex-wrap gap-2">
+                      {creator.audience_profile.audience_interests.map((interest, idx) => (
+                        <Badge key={idx} variant="outline">{interest}</Badge>
                       ))}
                     </div>
                   </div>

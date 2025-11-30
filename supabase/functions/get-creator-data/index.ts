@@ -111,55 +111,96 @@ Deno.serve(async (req) => {
     const creatorData = await bbResponse.json();
     console.log('BB API response received for creator:', creatorId);
 
-    // Parse and structure the full onboarding data
+    // Parse and structure the full onboarding data - check all 15 sections
     const sectionsCompleted: string[] = [];
     
     // Check each section for completion
-    if (creatorData.personal_info && Object.keys(creatorData.personal_info).length > 0) {
-      sectionsCompleted.push('personal_info');
+    if (creatorData.personal_information && Object.keys(creatorData.personal_information).length > 0) {
+      sectionsCompleted.push('personal_information');
     }
-    if (creatorData.persona && Object.keys(creatorData.persona).length > 0) {
-      sectionsCompleted.push('persona');
+    if (creatorData.physical_description && Object.keys(creatorData.physical_description).length > 0) {
+      sectionsCompleted.push('physical_description');
     }
-    if (creatorData.creator_story && Object.keys(creatorData.creator_story).length > 0) {
-      sectionsCompleted.push('creator_story');
-    }
-    if (creatorData.visual_identity && Object.keys(creatorData.visual_identity).length > 0) {
-      sectionsCompleted.push('visual_identity');
-    }
-    if (creatorData.messaging && Object.keys(creatorData.messaging).length > 0) {
-      sectionsCompleted.push('messaging');
-    }
-    if (creatorData.content_preferences && Object.keys(creatorData.content_preferences).length > 0) {
-      sectionsCompleted.push('content_preferences');
-    }
-    if (creatorData.pricing && Object.keys(creatorData.pricing).length > 0) {
-      sectionsCompleted.push('pricing');
+    if (creatorData.amsterdam_story && Object.keys(creatorData.amsterdam_story).length > 0) {
+      sectionsCompleted.push('amsterdam_story');
     }
     if (creatorData.boundaries && Object.keys(creatorData.boundaries).length > 0) {
       sectionsCompleted.push('boundaries');
     }
+    if (creatorData.pricing_structure && Object.keys(creatorData.pricing_structure).length > 0) {
+      sectionsCompleted.push('pricing_structure');
+    }
+    if (creatorData.persona_character && Object.keys(creatorData.persona_character).length > 0) {
+      sectionsCompleted.push('persona_character');
+    }
+    if (creatorData.scripts_messaging && Object.keys(creatorData.scripts_messaging).length > 0) {
+      sectionsCompleted.push('scripts_messaging');
+    }
+    if (creatorData.content_preferences && Object.keys(creatorData.content_preferences).length > 0) {
+      sectionsCompleted.push('content_preferences');
+    }
+    if (creatorData.visual_identity && Object.keys(creatorData.visual_identity).length > 0) {
+      sectionsCompleted.push('visual_identity');
+    }
+    if (creatorData.creator_story && Object.keys(creatorData.creator_story).length > 0) {
+      sectionsCompleted.push('creator_story');
+    }
+    if (creatorData.audience_profile && Object.keys(creatorData.audience_profile).length > 0) {
+      sectionsCompleted.push('audience_profile');
+    }
+    if (creatorData.posting_frequency) {
+      sectionsCompleted.push('posting_frequency');
+    }
+    if (creatorData.niche) {
+      sectionsCompleted.push('niche');
+    }
+    if (creatorData.tone_of_voice) {
+      sectionsCompleted.push('tone_of_voice');
+    }
+    if (creatorData.content_style && creatorData.content_style.length > 0) {
+      sectionsCompleted.push('content_style');
+    }
 
-    // Calculate completion percentage
-    const onboarding_completion = Math.round((sectionsCompleted.length / 8) * 100);
+    // Calculate completion percentage based on 15 sections
+    const onboarding_completion = Math.round((sectionsCompleted.length / 15) * 100);
 
+    // Pass through ALL BB data exactly as stored
     const fullCreatorData = {
       creator_id: creatorData.creator_id || creatorId,
       name: creatorData.name,
       email: creatorData.email,
       profile_photo_url: creatorData.profile_photo_url || null,
       creator_status: creatorData.creator_status || 'active',
-      personal_info: creatorData.personal_info || {},
-      visual_identity: creatorData.visual_identity || {},
-      creator_story: creatorData.creator_story || {},
-      boundaries: creatorData.boundaries || {},
-      pricing: creatorData.pricing || {},
-      persona: creatorData.persona || {},
-      messaging: creatorData.messaging || {},
-      content_preferences: creatorData.content_preferences || {},
+      
+      // All 15 sections - pass through exactly as stored (null if missing, not empty objects)
+      personal_information: creatorData.personal_information || null,
+      physical_description: creatorData.physical_description || null,
+      amsterdam_story: creatorData.amsterdam_story || null,
+      boundaries: creatorData.boundaries || null,
+      pricing_structure: creatorData.pricing_structure || null,
+      persona_character: creatorData.persona_character || null,
+      scripts_messaging: creatorData.scripts_messaging || null,
+      content_preferences: creatorData.content_preferences || null,
+      visual_identity: creatorData.visual_identity || null,
+      creator_story: creatorData.creator_story || null,
+      audience_profile: creatorData.audience_profile || null,
+      
+      // Top-level fields
+      posting_frequency: creatorData.posting_frequency || null,
+      niche: creatorData.niche || null,
+      tone_of_voice: creatorData.tone_of_voice || null,
+      content_style: creatorData.content_style || [],
+      
+      // Metadata
       voice_samples_available: creatorData.voice_samples_available || false,
       onboarding_completion,
       onboarding_sections_completed: sectionsCompleted,
+      
+      // Legacy mappings for backward compatibility
+      personal_info: creatorData.personal_information || creatorData.personal_info || null,
+      persona: creatorData.persona_character || creatorData.persona || null,
+      messaging: creatorData.scripts_messaging || creatorData.messaging || null,
+      pricing: creatorData.pricing_structure || creatorData.pricing || null,
     };
 
     return new Response(JSON.stringify({ 
