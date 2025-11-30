@@ -17,6 +17,7 @@ import { MOCK_CREATORS, getMockCreatorById } from "@/mocks/mockCreators";
 import { useCreatorContext } from "@/contexts/CreatorContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MockModeWarning } from "@/components/shared/MockModeWarning";
+import { ErrorState } from "@/components/shared/ErrorState";
 
 interface CreatorData {
   id: string;
@@ -347,37 +348,14 @@ const CreatorDetail = () => {
       });
 
       if (error || !data?.success || !data?.data) {
-        // Fallback to first mock creator if not found
-        const fallbackMock = MOCK_CREATORS[0];
-        setUsingMockData(true);
-        const mappedCreator: CreatorData = {
-          id: fallbackMock.id,
-          user_id: fallbackMock.id,
-          email: fallbackMock.email,
-          full_name: fallbackMock.name,
-          avatar_url: fallbackMock.avatarUrl,
-          onboarding_completed: fallbackMock.status === 'completed',
-          onboarding: fallbackMock.onboarding,
-          persona: {
-            niche: fallbackMock.persona.niche,
-            tone_of_voice: fallbackMock.persona.tone_of_voice,
-            content_strategy: fallbackMock.persona.strategy,
-            key_traits: fallbackMock.persona.key_traits,
-            boundaries: fallbackMock.persona.boundaries,
-            brand_keywords: fallbackMock.persona.brand_keywords,
-          },
-          style_preferences: {
-            preferred_colors: [
-              fallbackMock.style_preferences.primary_color,
-              fallbackMock.style_preferences.secondary_color,
-              fallbackMock.style_preferences.accent_color,
-            ],
-            vibe: fallbackMock.style_preferences.vibe,
-            sample_image_urls: fallbackMock.style_preferences.sample_image_urls,
-          },
-        };
-        setCreator(mappedCreator);
-        setRawJson(mappedCreator);
+        console.error('Failed to load creator data:', error);
+        toast({
+          title: "Error Loading Creator",
+          description: "Unable to load creator data from BB API. Please check API Settings.",
+          variant: "destructive",
+        });
+        setCreator(null);
+        setRawJson(null);
       } else {
         setUsingMockData(false);
         setCreator(data.data);
@@ -385,36 +363,13 @@ const CreatorDetail = () => {
       }
     } catch (error) {
       console.error('Error loading creator data:', error);
-      const fallbackMock = MOCK_CREATORS[0];
-      setUsingMockData(true);
-      const mappedCreator: CreatorData = {
-        id: fallbackMock.id,
-        user_id: fallbackMock.id,
-        email: fallbackMock.email,
-        full_name: fallbackMock.name,
-        avatar_url: fallbackMock.avatarUrl,
-        onboarding_completed: fallbackMock.status === 'completed',
-        onboarding: fallbackMock.onboarding,
-        persona: {
-          niche: fallbackMock.persona.niche,
-          tone_of_voice: fallbackMock.persona.tone_of_voice,
-          content_strategy: fallbackMock.persona.strategy,
-          key_traits: fallbackMock.persona.key_traits,
-          boundaries: fallbackMock.persona.boundaries,
-          brand_keywords: fallbackMock.persona.brand_keywords,
-        },
-        style_preferences: {
-          preferred_colors: [
-            fallbackMock.style_preferences.primary_color,
-            fallbackMock.style_preferences.secondary_color,
-            fallbackMock.style_preferences.accent_color,
-          ],
-          vibe: fallbackMock.style_preferences.vibe,
-          sample_image_urls: fallbackMock.style_preferences.sample_image_urls,
-        },
-      };
-      setCreator(mappedCreator);
-      setRawJson(mappedCreator);
+      toast({
+        title: "Error Loading Creator",
+        description: "An unexpected error occurred while loading creator data.",
+        variant: "destructive",
+      });
+      setCreator(null);
+      setRawJson(null);
     } finally {
       setLoading(false);
     }
@@ -636,6 +591,46 @@ const CreatorDetail = () => {
           </CardContent>
         </Card>
       </div>
+    );
+  }
+
+  // Error state - no creator data loaded
+  if (!loading && !creator) {
+    return (
+      <RoleGuard staffOnly fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Access Denied</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">You need staff privileges to view this page.</p>
+            </CardContent>
+          </Card>
+        </div>
+      }>
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 p-8">
+          <div className="max-w-5xl mx-auto space-y-6">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="ghost"
+                onClick={() => navigate("/creators")}
+                className="gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Creators
+              </Button>
+            </div>
+            <ErrorState 
+              variant="bb-error"
+              title="Creator Not Found"
+              message="Unable to load creator data from BB API. Please check that the BB API is configured correctly in API Settings."
+              onRetry={loadCreatorData}
+              retryLabel="Retry Loading"
+            />
+          </div>
+        </div>
+      </RoleGuard>
     );
   }
 

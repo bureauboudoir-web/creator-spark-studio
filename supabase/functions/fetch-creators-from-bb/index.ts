@@ -52,17 +52,17 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          data: [],
-          error: 'BB API not configured. Please configure it in Settings.',
+          error: 'BB API not configured',
+          details: 'BB API URL and Key must be configured in API Settings'
         }),
         { 
-          status: 200,
+          status: 502,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
 
-    // Sanitize URL and use raw API key
+    // Sanitize URL and validate API key
     const cleanUrl = sanitizeUrl(settings.bb_api_url);
     const apiKey = settings.bb_api_key;
     
@@ -72,17 +72,17 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          data: [],
-          error: 'Invalid API key - please reconfigure in Settings',
+          error: 'Invalid API key',
+          details: 'API key is empty or invalid - please reconfigure in Settings'
         }),
         { 
-          status: 200,
+          status: 502,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
     
-    // Call BB API to fetch creators using /external-creators endpoint
+    // Fix URL construction - don't add /functions/v1/ if it's already part of the base URL
     const baseUrl = cleanUrl.endsWith('/') 
       ? cleanUrl.slice(0, -1) 
       : cleanUrl;
@@ -103,15 +103,16 @@ Deno.serve(async (req) => {
     });
 
     if (!bbResponse.ok) {
-      console.error('BB API error:', bbResponse.status, await bbResponse.text());
+      const errorText = await bbResponse.text();
+      console.error('BB API error:', bbResponse.status, errorText);
       return new Response(
         JSON.stringify({
           success: false,
-          data: [],
-          error: 'BB API Connection Failed — Check Settings',
+          error: 'BB API connection failed',
+          details: `API returned ${bbResponse.status}: ${errorText}`
         }),
         { 
-          status: 200,
+          status: 502,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
@@ -143,14 +144,15 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Error fetching creators from BB:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({
         success: false,
-        data: [],
-        error: 'Failed to fetch creators. Please try again.',
+        error: 'Internal server error',
+        details: errorMessage
       }),
       { 
-        status: 200,
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
