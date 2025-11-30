@@ -8,6 +8,8 @@ import { useRole } from "@/hooks/useRole";
 
 export const Layout = () => {
   const { user, loading } = useAuth();
+  const { usingMockData } = useCreatorContext();
+  const { isStaff } = useRole();
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -16,9 +18,6 @@ export const Layout = () => {
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
-
-  const { usingMockData } = useCreatorContext();
-  const { isStaff } = useRole();
 
   return (
     <SidebarProvider>
