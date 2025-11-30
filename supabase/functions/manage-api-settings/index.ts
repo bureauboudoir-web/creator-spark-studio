@@ -95,7 +95,15 @@ Deno.serve(async (req) => {
         // Update existing settings
         const updateData: any = { updated_at: new Date().toISOString() };
         if (bb_api_url !== undefined) updateData.bb_api_url = bb_api_url;
-        if (bb_api_key !== undefined) updateData.bb_api_key = bb_api_key;
+        
+        // Only update API key if it's a real value (not empty, not masked placeholder)
+        if (bb_api_key !== undefined && bb_api_key !== '' && bb_api_key !== '••••••••') {
+          updateData.bb_api_key = bb_api_key;
+          console.log('📝 Updating bb_api_key with new value (length:', bb_api_key.length, 'chars)');
+        } else {
+          console.log('⏭️ Skipping bb_api_key update (value is empty or masked placeholder)');
+        }
+        
         if (mock_mode !== undefined) updateData.mock_mode = mock_mode;
 
         result = await serviceClient
