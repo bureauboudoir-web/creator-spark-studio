@@ -11,16 +11,17 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get creator_id from query params
-    const url = new URL(req.url);
-    const creatorId = url.searchParams.get('creator_id');
+    // Get creator_id from request body
+    const { creator_id } = await req.json();
     
-    if (!creatorId) {
+    if (!creator_id) {
       return new Response(JSON.stringify({ error: 'Missing creator_id parameter' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const creatorId = creator_id;
 
     // Verify authentication
     const authHeader = req.headers.get('Authorization');
