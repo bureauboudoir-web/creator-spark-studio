@@ -5,6 +5,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Sanitize URL: trim whitespace, remove invisible chars, fix double slashes
+const sanitizeUrl = (url: string): string => {
+  if (!url) return '';
+  let cleaned = url.trim();
+  cleaned = cleaned.replace(/([^:])\/\//g, '$1/');
+  return cleaned;
+};
+
+// Sanitize API key: remove non-ASCII characters
+const sanitizeApiKey = (key: string): string => {
+  if (!key) return '';
+  return key.replace(/[^\x20-\x7E]/g, '').trim();
+};
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -83,22 +97,43 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Sanitize URL and API key
+    const cleanUrl = sanitizeUrl(settings.bb_api_url);
+    const cleanApiKey = sanitizeApiKey(settings.bb_api_key);
+    
+    // Validate API key
+    if (!cleanApiKey) {
+      console.error('❌ API key is empty after sanitization');
+      return new Response(
+        JSON.stringify({
+          status: 'error',
+          message: 'Invalid API key - please reconfigure in Settings',
+          details: 'API key is empty or contains only invalid characters',
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
     // Construct status endpoint - handle trailing slash
-    const baseUrl = settings.bb_api_url.endsWith('/') 
-      ? settings.bb_api_url.slice(0, -1) 
-      : settings.bb_api_url;
+    const baseUrl = cleanUrl.endsWith('/') 
+      ? cleanUrl.slice(0, -1) 
+      : cleanUrl;
     const statusUrl = `${baseUrl}/external-api-status`;
     
     console.log('=== BB API Connection Test ===');
+    console.log('Sanitized URL:', cleanUrl);
     console.log('Base URL:', baseUrl);
     console.log('Full URL:', statusUrl);
-    console.log('API Key length:', settings.bb_api_key?.length || 0);
+    console.log('Sanitized API Key length:', cleanApiKey.length);
 
     // Call BB API status endpoint
     const bbResponse = await fetch(statusUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${settings.bb_api_key}`,
+        'Authorization': `Bearer ${cleanApiKey}`,
         'Content-Type': 'application/json',
       },
     });

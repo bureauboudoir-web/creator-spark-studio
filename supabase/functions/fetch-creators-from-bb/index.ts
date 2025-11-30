@@ -4,6 +4,20 @@ import { corsHeaders } from '../_shared/cors.ts';
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+// Sanitize URL: trim whitespace, remove invisible chars, fix double slashes
+const sanitizeUrl = (url: string): string => {
+  if (!url) return '';
+  let cleaned = url.trim();
+  cleaned = cleaned.replace(/([^:])\/\//g, '$1/');
+  return cleaned;
+};
+
+// Sanitize API key: remove non-ASCII characters
+const sanitizeApiKey = (key: string): string => {
+  if (!key) return '';
+  return key.replace(/[^\x20-\x7E]/g, '').trim();
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -49,21 +63,42 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Sanitize URL and API key
+    const cleanUrl = sanitizeUrl(settings.bb_api_url);
+    const cleanApiKey = sanitizeApiKey(settings.bb_api_key);
+    
+    // Validate API key
+    if (!cleanApiKey) {
+      console.error('❌ API key is empty after sanitization');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          data: [],
+          error: 'Invalid API key - please reconfigure in Settings',
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
     // Call BB API to fetch creators using /external-creators endpoint
-    const baseUrl = settings.bb_api_url.endsWith('/') 
-      ? settings.bb_api_url.slice(0, -1) 
-      : settings.bb_api_url;
+    const baseUrl = cleanUrl.endsWith('/') 
+      ? cleanUrl.slice(0, -1) 
+      : cleanUrl;
     const bbApiUrl = `${baseUrl}/external-creators`;
     
     console.log('=== BB API Request ===');
+    console.log('Sanitized URL:', cleanUrl);
     console.log('Base URL:', baseUrl);
     console.log('Full URL:', bbApiUrl);
-    console.log('API Key length:', settings.bb_api_key?.length || 0);
+    console.log('Sanitized API Key length:', cleanApiKey.length);
 
     const bbResponse = await fetch(bbApiUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${settings.bb_api_key}`,
+        'Authorization': `Bearer ${cleanApiKey}`,
         'Content-Type': 'application/json',
       },
     });
