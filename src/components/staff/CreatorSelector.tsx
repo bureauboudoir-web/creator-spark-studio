@@ -37,25 +37,17 @@ export const CreatorSelector = () => {
 
   useEffect(() => {
     fetchCreatorsFromBB();
-  }, []);
+  }, [usingMockData]);
 
   const fetchCreatorsFromBB = async () => {
     try {
       setLoading(true);
       setApiError(null);
 
-      // First check mock_mode setting
-      const { data: settingsData } = await supabase.functions.invoke('manage-api-settings', {
-        method: 'GET',
-      });
-      
-      const mockMode = settingsData?.data?.mock_mode ?? true;
-      
-      if (mockMode) {
+      if (usingMockData) {
         // Use mock data when mock mode is enabled
         console.log('Mock mode enabled - using mock creators');
         setBbApiStatus('MOCK_MODE');
-        setUsingMockData(true);
         
         const mockBBCreators: BBCreator[] = MOCK_CREATORS.map((mock) => ({
           creator_id: mock.id,
@@ -81,7 +73,6 @@ export const CreatorSelector = () => {
       if (error) {
         console.error('Error invoking fetch-creators-from-bb:', error);
         setBbApiStatus('CONNECTION_ERROR');
-        setUsingMockData(true);
         
         const mockBBCreators: BBCreator[] = MOCK_CREATORS.map((mock) => ({
           creator_id: mock.id,
@@ -109,8 +100,6 @@ export const CreatorSelector = () => {
         } else {
           setBbApiStatus('CONNECTION_ERROR');
         }
-        
-        setUsingMockData(true);
         
         const mockBBCreators: BBCreator[] = MOCK_CREATORS.map((mock) => ({
           creator_id: mock.id,
@@ -140,7 +129,6 @@ export const CreatorSelector = () => {
     } catch (err) {
       console.error('Unexpected error fetching creators:', err);
       setBbApiStatus('CONNECTION_ERROR');
-      setUsingMockData(true);
       
       const mockBBCreators: BBCreator[] = MOCK_CREATORS.map((mock) => ({
         creator_id: mock.id,
