@@ -34,6 +34,17 @@ export default function Dashboard() {
     try {
       setLoading(true);
 
+      // Fetch creators from BB API
+      const { data: creatorsResponse } = await supabase.functions.invoke('fetch-creators-from-bb');
+      
+      const creators = creatorsResponse?.data || [];
+      const creatorsWaitingReview = creators.filter((c: any) => 
+        c.onboarding_completion > 0 && c.onboarding_completion < 100
+      ).length;
+      const creatorsReadyForGeneration = creators.filter((c: any) => 
+        c.onboarding_completion === 100
+      ).length;
+
       // Fetch starter packs stats
       const { data: starterPacks } = await supabase
         .from('starter_packs')
@@ -43,8 +54,8 @@ export default function Dashboard() {
       const completed = starterPacks?.filter(sp => sp.status === 'completed').length || 0;
 
       setStats({
-        creatorsWaitingReview: 0, // Will be populated when we have onboarding data
-        creatorsReadyForGeneration: 0, // Will be populated when we have onboarding data
+        creatorsWaitingReview,
+        creatorsReadyForGeneration,
         starterPacksInProgress: inProgress,
         starterPacksCompleted: completed,
       });
@@ -99,7 +110,7 @@ export default function Dashboard() {
       <div className="container mx-auto p-6 space-y-6">
         <PageHeader 
           title="Staff Dashboard"
-          subtitle="Manage creators and content generation"
+          subtitle="Onboarding status synced from BB platform"
         />
 
         {loading ? (

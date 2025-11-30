@@ -122,13 +122,32 @@ Deno.serve(async (req) => {
     console.log('BB API response:', bbData);
 
     // Normalize the response to our format
-    const normalizedCreators = (bbData.creators || bbData || []).map((creator: any) => ({
-      creator_id: creator.creator_id || creator.id || creator.userId,
-      name: creator.name || creator.full_name || creator.displayName || 'Unknown',
-      email: creator.email || '',
-      profile_photo_url: creator.profile_photo_url || creator.avatar_url || creator.photoUrl || null,
-      creator_status: creator.creator_status || creator.status || 'active',
-    }));
+    const rawCreators = bbData.creators || bbData || [];
+    const normalizedCreators = rawCreators.map((creator: any) => {
+      // Calculate onboarding completion based on available sections
+      const sectionsCompleted: string[] = [];
+      
+      if (creator.personal_info && Object.keys(creator.personal_info).length > 0) sectionsCompleted.push('personal_info');
+      if (creator.persona && Object.keys(creator.persona).length > 0) sectionsCompleted.push('persona');
+      if (creator.creator_story && Object.keys(creator.creator_story).length > 0) sectionsCompleted.push('creator_story');
+      if (creator.visual_identity && Object.keys(creator.visual_identity).length > 0) sectionsCompleted.push('visual_identity');
+      if (creator.messaging && Object.keys(creator.messaging).length > 0) sectionsCompleted.push('messaging');
+      if (creator.content_preferences && Object.keys(creator.content_preferences).length > 0) sectionsCompleted.push('content_preferences');
+      if (creator.pricing && Object.keys(creator.pricing).length > 0) sectionsCompleted.push('pricing');
+      if (creator.boundaries && Object.keys(creator.boundaries).length > 0) sectionsCompleted.push('boundaries');
+
+      const onboarding_completion = Math.round((sectionsCompleted.length / 8) * 100);
+
+      return {
+        creator_id: creator.creator_id || creator.id || creator.userId,
+        name: creator.name || creator.full_name || creator.displayName || 'Unknown',
+        email: creator.email || '',
+        profile_photo_url: creator.profile_photo_url || creator.avatar_url || creator.photoUrl || null,
+        creator_status: creator.creator_status || creator.status || 'active',
+        onboarding_completion,
+        onboarding_sections_completed: sectionsCompleted,
+      };
+    });
 
     return new Response(
       JSON.stringify({
