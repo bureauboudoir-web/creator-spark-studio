@@ -1,35 +1,35 @@
 import { useState, useEffect } from "react";
 import { useCreatorContext } from "@/contexts/CreatorContext";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Sparkles, CheckCircle2, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { BBCreatorFull } from "@/types/bb-creator";
+import { calculateOnboardingCompletion } from "@/types/onboarding-checklist";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { NoCreatorSelected } from "@/components/shared/NoCreatorSelected";
-import { MockModeWarning } from "@/components/shared/MockModeWarning";
 import { CreatorMetadataCard } from "@/components/generator/CreatorMetadataCard";
 import { OnboardingChecklist } from "@/components/generator/OnboardingChecklist";
-import { BBCreatorFull } from "@/types/bb-creator";
-import { REQUIRED_ONBOARDING_SECTIONS } from "@/types/onboarding-checklist";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sparkles, Loader2, CheckCircle, Library, RefreshCw, Save } from "lucide-react";
+import { NoCreatorSelected } from "@/components/shared/NoCreatorSelected";
+import { MockModeWarning } from "@/components/shared/MockModeWarning";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function StarterPackGenerator() {
-  const { selectedCreatorId, selectedCreator, usingMockData } = useCreatorContext();
+  const { selectedCreatorId, usingMockData: mockDataUsed } = useCreatorContext();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generated, setGenerated] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<any>(null);
+  const [starterPackId, setStarterPackId] = useState<string | null>(null);
   const [creatorData, setCreatorData] = useState<BBCreatorFull | null>(null);
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Fetch full creator data when component mounts or creator changes
-  const fetchCreatorData = async () => {
+  const fetchCreatorData = async (showToast = false) => {
+    if (showToast) setIsRefreshing(true);
     if (!selectedCreatorId) return;
     
-    setLoading(true);
+    setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('get-creator-data', {
         body: { creator_id: selectedCreatorId }
@@ -41,24 +41,87 @@ export default function StarterPackGenerator() {
       }
     } catch (error) {
       console.error('Error fetching creator data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load creator data from BB",
-        variant: "destructive",
-      });
+      toast.error("Failed to load creator data from BB");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+      setIsRefreshing(false);
+      if (showToast) {
+        toast.success("Creator data refreshed from BB Platform");
+      }
     }
   };
 
-  // Fetch on mount
   useEffect(() => {
     if (selectedCreatorId) {
       fetchCreatorData();
     }
   }, [selectedCreatorId]);
 
-  if (!selectedCreatorId || !selectedCreator) {
+  const handleGenerate = async () => {
+    if (!selectedCreatorId || !creatorData) return;
+
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-starter-pack', {
+        body: { 
+          creator_id: selectedCreatorId,
+          // Pass new 11-step data for generation
+          persona_tone: creatorData.step4_persona_tone,
+          messaging_templates: creatorData.step7_messaging_templates,
+          pricing: creatorData.step6_pricing,
+          amsterdam_story: creatorData.step3_amsterdam_story,
+          market_positioning: creatorData.step9_market_positioning,
+          persona_brand: creatorData.step2_persona_brand,
+          boundaries: creatorData.step5_boundaries,
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        setGeneratedContent(data.data.content);
+        setStarterPackId(data.data.starter_pack_id);
+        toast.success("Starter Pack generated successfully!");
+      } else {
+        throw new Error(data?.error || 'Generation failed');
+      }
+    } catch (error: any) {
+      console.error('Error generating starter pack:', error);
+      toast.error(error.message || "Failed to generate starter pack");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSaveToBB = async () => {
+    if (!selectedCreatorId || !generatedContent || !starterPackId) return;
+
+    setIsSaving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('save-content-to-bb', {
+        body: { 
+          creator_id: selectedCreatorId,
+          starter_pack_id: starterPackId,
+          content_items: generatedContent
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success("Content saved to BB Platform successfully!");
+      } else {
+        throw new Error(data?.error || 'Save failed');
+      }
+    } catch (error: any) {
+      console.error('Error saving to BB:', error);
+      toast.error(error.message || "Failed to save to BB Platform");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (!selectedCreatorId) {
     return (
       <div className="container mx-auto p-6">
         <PageHeader title="Starter Pack Generator" />
@@ -67,49 +130,11 @@ export default function StarterPackGenerator() {
     );
   }
 
-  const onboardingComplete = creatorData?.onboarding_completion === 100;
-  const sectionsCompleted = creatorData?.onboarding_sections_completed || [];
-  const missingFields = REQUIRED_ONBOARDING_SECTIONS.filter(
-    (section) => !sectionsCompleted.includes(section)
-  ).length;
-  const canGenerate = onboardingComplete && !usingMockData;
+  const completionPercentage = creatorData?.onboarding_completion || 0;
+  const stepsCompleted = creatorData?.onboarding_steps_completed || [];
+  const canGenerate = completionPercentage === 100 && !mockDataUsed;
 
-  const handleGenerate = async () => {
-    if (!canGenerate) return;
-
-    setIsGenerating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-starter-pack', {
-        body: {
-          creatorProfile: creatorData,
-        },
-      });
-
-      if (error) throw error;
-
-      setGeneratedContent(data);
-      setGenerated(true);
-
-      toast({
-        title: "Success!",
-        description: "Starter pack generated successfully",
-      });
-
-      // Save to local storage for preview
-      localStorage.setItem('lastGeneratedPack', JSON.stringify(data));
-    } catch (error: any) {
-      console.error('Generation error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to generate starter pack",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  if (loading || !creatorData) {
+  if (isLoading || !creatorData) {
     return (
       <div className="container mx-auto p-6">
         <PageHeader title="Starter Pack Generator" />
@@ -120,7 +145,7 @@ export default function StarterPackGenerator() {
     );
   }
 
-  if (generated && generatedContent) {
+  if (generatedContent) {
     return (
       <div className="container mx-auto p-6 space-y-6">
         <PageHeader title="Starter Pack Generated!" />
@@ -128,20 +153,42 @@ export default function StarterPackGenerator() {
         <Card className="border-primary bg-gradient-to-br from-primary/5 to-accent/5">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="w-6 h-6 text-primary" />
+              <CheckCircle className="w-6 h-6 text-primary" />
               Generation Complete
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              Your starter pack has been generated successfully with content based on {selectedCreator.name}'s profile.
+              Your starter pack has been generated successfully based on {creatorData.name}'s profile.
             </p>
-            <div className="flex gap-3">
-              <Button onClick={() => setGenerated(false)}>
-                Generate Another
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button 
+                size="lg" 
+                onClick={handleGenerate}
+                className="flex-1"
+              >
+                <Sparkles className="w-5 h-5 mr-2" />
+                Generate New Pack
               </Button>
-              <Button variant="outline" onClick={() => navigate('/creator-library')}>
-                <Package className="w-4 h-4 mr-2" />
+              <Button 
+                size="lg" 
+                onClick={handleSaveToBB}
+                disabled={isSaving}
+                className="flex-1"
+              >
+                {isSaving ? (
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-5 h-5 mr-2" />
+                )}
+                Save to BB
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline"
+                onClick={() => navigate('/creator-library')}
+              >
+                <Library className="w-5 h-5 mr-2" />
                 View Library
               </Button>
             </div>
@@ -158,113 +205,92 @@ export default function StarterPackGenerator() {
         subtitle="Generate AI-powered content based on creator onboarding data"
       />
       
-      {usingMockData && <MockModeWarning />}
+      {mockDataUsed && <MockModeWarning />}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          <CreatorMetadataCard creator={creatorData} />
-
-          <Card className="border-primary/20">
-            <CardHeader>
-              <CardTitle className="text-lg">What AI Will Generate</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <span className="font-medium">30 Conversation Starters</span>
-                </div>
-                <p className="text-xs text-muted-foreground pl-6">
-                  Based on {creatorData.voice_preferences?.tone_of_voice || creatorData.persona_character?.communication_style || 'personality'}, {creatorData.scripts_messaging?.message_tone || 'messaging style'}, and engagement hooks
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 text-sm">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="font-medium">5 Video Scripts</span>
-              </div>
-              <p className="text-xs text-muted-foreground pl-6">
-                Using {creatorData.creator_story?.origin_story ? 'brand story' : 'profile'}, {creatorData.visual_identity?.photo_style || 'visual style'}, and storytelling approach
-              </p>
-
-              <div className="flex items-center gap-2 text-sm">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="font-medium">20 Feed Captions</span>
-              </div>
-              <p className="text-xs text-muted-foreground pl-6">
-                Reflecting {creatorData.persona_character?.persona_name || 'personality'} and {creatorData.content_preferences?.content_energy_level || 'content style'}
-              </p>
-
-              <div className="flex items-center gap-2 text-sm">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="font-medium">5 Story Teasers</span>
-              </div>
-              <p className="text-xs text-muted-foreground pl-6">
-                Built around emotional storytelling and {creatorData.content_preferences?.preferred_content_types?.join(', ') || 'preferred themes'}
-              </p>
-
-              <div className="flex items-center gap-2 text-sm">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="font-medium">Menu & Upsell Copy</span>
-              </div>
-              <p className="text-xs text-muted-foreground pl-6">
-                Showcasing {creatorData.menu_items?.length || 0} menu items with {creatorData.bundles?.length || 0} bundle offers
-              </p>
-            </CardContent>
-          </Card>
+      <div className="space-y-6">
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            onClick={() => fetchCreatorData(true)}
+            disabled={isRefreshing}
+            className="gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh from BB
+          </Button>
         </div>
 
-        <div className="space-y-6">
-          <OnboardingChecklist 
-            sectionsCompleted={sectionsCompleted}
-            completionPercentage={creatorData.onboarding_completion || 0}
-          />
+        <CreatorMetadataCard creator={creatorData} />
 
-          <Card className="border-primary/20">
-            <CardContent className="pt-6">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <Button
-                        onClick={handleGenerate}
-                        disabled={!canGenerate || isGenerating}
-                        className="w-full"
-                        size="lg"
-                      >
-                        {isGenerating ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            Generate Starter Pack
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </TooltipTrigger>
-                  {!canGenerate && (
-                    <TooltipContent>
-                      {usingMockData 
-                        ? "Cannot generate in mock mode - connect to BB API first"
-                        : `Complete ${missingFields} more onboarding section${missingFields !== 1 ? 's' : ''} in BB to generate`
-                      }
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
+        <Card className="border-primary/20">
+          <CardHeader>
+            <CardTitle className="text-lg">What AI Will Generate</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="font-medium">Scripts & Hooks</span>
+              </div>
+              <p className="text-xs text-muted-foreground pl-6">
+                Based on persona tone and messaging templates
+              </p>
+            </div>
 
-              {!onboardingComplete && !usingMockData && (
-                <p className="text-xs text-center text-muted-foreground mt-3">
-                  All 15 onboarding sections must be complete in BB before generating content
-                </p>
+            <div className="flex items-center gap-2 text-sm">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="font-medium">PPV Teasers</span>
+            </div>
+            <p className="text-xs text-muted-foreground pl-6">
+              Using pricing structure and boundaries
+            </p>
+
+            <div className="flex items-center gap-2 text-sm">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="font-medium">Fan Messages</span>
+            </div>
+            <p className="text-xs text-muted-foreground pl-6">
+              Reflecting persona tone and market positioning
+            </p>
+          </CardContent>
+        </Card>
+
+        <OnboardingChecklist 
+          stepsCompleted={stepsCompleted}
+          completionPercentage={completionPercentage}
+        />
+
+        <Card className="border-primary/20">
+          <CardContent className="pt-6">
+            <Button
+              onClick={handleGenerate}
+              disabled={!canGenerate || isGenerating}
+              className="w-full"
+              size="lg"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Starter Pack
+                </>
               )}
-            </CardContent>
-          </Card>
-        </div>
+            </Button>
+
+            {!canGenerate && (
+              <p className="text-xs text-center text-muted-foreground mt-3">
+                {mockDataUsed 
+                  ? "Cannot generate in mock mode - connect to BB API first"
+                  : "Complete all 9 onboarding steps in BB before generating content"
+                }
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

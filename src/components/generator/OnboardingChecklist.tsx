@@ -2,15 +2,15 @@ import { CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { getOnboardingSections } from "@/types/onboarding-checklist";
+import { getOnboardingSteps } from "@/types/onboarding-checklist";
 
 interface OnboardingChecklistProps {
-  sectionsCompleted: string[];
+  stepsCompleted: number[];
   completionPercentage: number;
 }
 
-export const OnboardingChecklist = ({ sectionsCompleted, completionPercentage }: OnboardingChecklistProps) => {
-  const sections = getOnboardingSections(sectionsCompleted);
+export const OnboardingChecklist = ({ stepsCompleted, completionPercentage }: OnboardingChecklistProps) => {
+  const sections = getOnboardingSteps(stepsCompleted);
   const missingSections = sections.filter(s => !s.completed);
 
   return (
@@ -27,7 +27,7 @@ export const OnboardingChecklist = ({ sectionsCompleted, completionPercentage }:
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Overall Progress</span>
-            <span className="font-medium">{sectionsCompleted.length} of {sections.length}</span>
+            <span className="font-medium">{stepsCompleted.length} of {sections.length}</span>
           </div>
           <Progress value={completionPercentage} className="h-2" />
         </div>

@@ -1,15 +1,19 @@
-import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { BBCreatorFull } from "@/types/bb-creator";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, User, RefreshCw, Loader2, CheckCircle2, XCircle, MapPin, Calendar } from "lucide-react";
-import { BBCreatorFull } from "@/types/bb-creator";
-import { getOnboardingSections } from "@/types/onboarding-checklist";
+import { 
+  ArrowLeft, Loader2, RefreshCw, User, MapPin, MessageSquare, 
+  Shield, DollarSign, Mail, Globe, Target, CheckCircle 
+} from "lucide-react";
 import { ErrorState } from "@/components/shared/ErrorState";
+import { toast } from "sonner";
+import * as Icons from "lucide-react";
 
 const CreatorDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -50,11 +54,72 @@ const CreatorDetail = () => {
     }
   };
 
-  const getStatusBadge = () => {
-    if (!creator) return null;
-    
-    const completion = creator.onboarding_completion || 0;
-    
+  const renderSection = (
+    title: string,
+    icon: keyof typeof Icons,
+    data: any,
+    borderColor: string
+  ) => {
+    if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
+      return null;
+    }
+
+    const IconComponent = Icons[icon] as React.ComponentType<{ className?: string }>;
+
+    return (
+      <div className={`border-l-4 ${borderColor} bg-slate-800/50 rounded-lg p-6`}>
+        <div className="flex items-center gap-3 mb-4">
+          <IconComponent className="w-6 h-6" />
+          <h3 className="text-xl font-semibold text-white">{title}</h3>
+        </div>
+        <div className="space-y-3 text-sm">
+          {Object.entries(data).map(([key, value]) => {
+            if (!value) return null;
+            
+            const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            
+            if (Array.isArray(value)) {
+              return (
+                <div key={key}>
+                  <p className="text-slate-400 mb-2">{label}:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {value.map((item, i) => (
+                      <Badge key={i} variant="outline" className="bg-slate-700/50">
+                        {typeof item === 'object' ? JSON.stringify(item) : item}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            
+            if (typeof value === 'object') {
+              return (
+                <div key={key} className="space-y-2">
+                  <p className="text-slate-400 font-medium">{label}:</p>
+                  <div className="pl-4 space-y-1">
+                    {Object.entries(value).map(([subKey, subValue]) => (
+                      <p key={subKey} className="text-slate-300">
+                        <span className="text-slate-500">{subKey.replace(/_/g, ' ')}:</span> {String(subValue)}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            
+            return (
+              <p key={key} className="text-slate-300">
+                <span className="text-slate-400">{label}:</span> {String(value)}
+              </p>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const getStatusBadge = (completion: number) => {
     if (completion === 100) {
       return <Badge className="bg-green-500/10 text-green-700 border-green-500/20">Complete</Badge>;
     } else if (completion > 0) {
@@ -109,11 +174,14 @@ const CreatorDetail = () => {
     );
   }
 
-  const onboardingSections = getOnboardingSections(creator.onboarding_sections_completed || []);
+  const initials = creator.name
+    ?.split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase() || '??';
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={() => navigate('/creators')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -125,441 +193,86 @@ const CreatorDetail = () => {
         </Button>
       </div>
 
-      {/* Creator Profile Card */}
-      <Card className="border-2">
-        <CardHeader>
-          <div className="flex items-start gap-6">
-            <Avatar className="w-24 h-24">
+      <Card className="mb-8 border-0 shadow-xl bg-gradient-to-br from-slate-900 to-slate-800">
+        <CardHeader className="border-b border-white/10">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+            <Avatar className="w-24 h-24 ring-4 ring-primary/30">
               <AvatarImage src={creator.profile_photo_url || undefined} />
-              <AvatarFallback>
-                <User className="w-12 h-12" />
-              </AvatarFallback>
+              <AvatarFallback className="bg-primary/20 text-2xl">{initials}</AvatarFallback>
             </Avatar>
-            
-            <div className="flex-1 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold">
-                    {creator.personal_information?.full_name || creator.name || "Unnamed Creator"}
-                  </h1>
-                  <p className="text-muted-foreground">{creator.email}</p>
-                </div>
-                {getStatusBadge()}
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-4 mb-2">
+                <CardTitle className="text-3xl text-white">{creator.name}</CardTitle>
+                {getStatusBadge(creator.onboarding_completion || 0)}
               </div>
-
-              <div className="flex flex-wrap gap-4 text-sm">
-                {(creator.personal_information?.location_city || creator.personal_information?.location_country) && (
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <MapPin className="w-4 h-4" />
-                    <span>
-                      {[creator.personal_information.location_city, creator.personal_information.location_country]
-                        .filter(Boolean).join(', ')}
-                    </span>
-                  </div>
-                )}
-                {creator.personal_information?.age && (
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    <span>{creator.personal_information.age} years old</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
+              <p className="text-slate-400 mb-4">{creator.email}</p>
+              <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Onboarding Progress</span>
-                  <span className="text-muted-foreground">{creator.onboarding_completion || 0}%</span>
+                  <span className="text-slate-400">Onboarding Progress</span>
+                  <span className="text-white font-semibold">{creator.onboarding_completion || 0}%</span>
                 </div>
                 <Progress value={creator.onboarding_completion || 0} className="h-2" />
               </div>
-
-              <div className="flex flex-wrap gap-2">
-                {creator.persona_character?.persona_name && (
-                  <Badge variant="outline">{creator.persona_character.persona_name}</Badge>
-                )}
-                {creator.of_strategy?.niche && (
-                  <Badge variant="outline">{creator.of_strategy.niche}</Badge>
-                )}
-                {creator.content_preferences?.posting_frequency && (
-                  <Badge variant="outline">{creator.content_preferences.posting_frequency}</Badge>
-                )}
-              </div>
-
-              {creator.persona_character?.character_traits && creator.persona_character.character_traits.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {creator.persona_character.character_traits.map((trait, idx) => (
-                    <Badge key={idx} variant="secondary">{trait}</Badge>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </CardHeader>
       </Card>
 
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Left Column */}
-        <div className="space-y-6">
-          
-          {/* Onboarding Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Onboarding Status ({creator.onboarding_sections_completed?.length || 0}/16)</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {onboardingSections.map((section) => (
-                <div key={section.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {section.completed ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-red-600" />
-                    )}
-                    <div>
-                      <p className="font-medium text-sm">{section.label}</p>
-                      <p className="text-xs text-muted-foreground">{section.description}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Personal Information */}
-          {creator.personal_information && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Full Name</p>
-                  <p>{creator.personal_information.full_name || "Not provided yet"}</p>
-                </div>
-                {creator.personal_information.preferred_name && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Preferred Name</p>
-                    <p>{creator.personal_information.preferred_name}</p>
-                  </div>
-                )}
-                {creator.personal_information.age && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Age</p>
-                    <p>{creator.personal_information.age}</p>
-                  </div>
-                )}
-                {(creator.personal_information.location_city || creator.personal_information.location_country) && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Location</p>
-                    <p>
-                      {[creator.personal_information.location_city, creator.personal_information.location_country]
-                        .filter(Boolean).join(', ')}
-                    </p>
-                  </div>
-                )}
-                {creator.personal_information.bio && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Bio</p>
-                    <p className="text-sm">{creator.personal_information.bio}</p>
-                  </div>
-                )}
-                {creator.personal_information.languages && creator.personal_information.languages.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Languages</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.personal_information.languages.map((lang, idx) => (
-                        <Badge key={idx} variant="outline">{lang}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Physical Description */}
-          {creator.physical_description && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Physical Description</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  {creator.physical_description.height && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Height</p>
-                      <p className="text-sm">{creator.physical_description.height}</p>
-                    </div>
-                  )}
-                  {creator.physical_description.body_type && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Body Type</p>
-                      <p className="text-sm">{creator.physical_description.body_type}</p>
-                    </div>
-                  )}
-                  {creator.physical_description.hair_color && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Hair Color</p>
-                      <p className="text-sm">{creator.physical_description.hair_color}</p>
-                    </div>
-                  )}
-                  {creator.physical_description.hair_length && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Hair Length</p>
-                      <p className="text-sm">{creator.physical_description.hair_length}</p>
-                    </div>
-                  )}
-                  {creator.physical_description.eye_color && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Eye Color</p>
-                      <p className="text-sm">{creator.physical_description.eye_color}</p>
-                    </div>
-                  )}
-                </div>
-                {creator.physical_description.distinguishing_features && creator.physical_description.distinguishing_features.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Distinguishing Features</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.physical_description.distinguishing_features.map((feature, idx) => (
-                        <Badge key={idx} variant="outline">{feature}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Amsterdam Story */}
-          {creator.amsterdam_story && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Amsterdam Story</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {creator.amsterdam_story.how_they_arrived && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">How They Arrived</p>
-                    <p className="text-sm">{creator.amsterdam_story.how_they_arrived}</p>
-                  </div>
-                )}
-                {creator.amsterdam_story.why_amsterdam && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Why Amsterdam</p>
-                    <p className="text-sm">{creator.amsterdam_story.why_amsterdam}</p>
-                  </div>
-                )}
-                {creator.amsterdam_story.connection_to_city && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">City Connection</p>
-                    <p className="text-sm">{creator.amsterdam_story.connection_to_city}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Right Column */}
-        <div className="space-y-6">
-          
-          {/* Persona & Character */}
-          {creator.persona_character && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Persona & Character</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {creator.persona_character.persona_name && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Persona Name</p>
-                    <p className="text-sm">{creator.persona_character.persona_name}</p>
-                  </div>
-                )}
-                {creator.persona_character.communication_style && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Communication Style</p>
-                    <p className="text-sm">{creator.persona_character.communication_style}</p>
-                  </div>
-                )}
-                {creator.persona_character.character_traits && creator.persona_character.character_traits.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Character Traits</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.persona_character.character_traits.map((trait, idx) => (
-                        <Badge key={idx} variant="secondary">{trait}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {creator.persona_character.roleplay_styles && creator.persona_character.roleplay_styles.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Roleplay Styles</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.persona_character.roleplay_styles.map((style, idx) => (
-                        <Badge key={idx} variant="outline">{style}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Scripts & Messaging */}
-          {creator.scripts_messaging && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Scripts & Messaging Style</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {creator.scripts_messaging.message_tone && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Message Tone</p>
-                    <p className="text-sm">{creator.scripts_messaging.message_tone}</p>
-                  </div>
-                )}
-                {creator.scripts_messaging.selling_strategy && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Selling Strategy</p>
-                    <p className="text-sm">{creator.scripts_messaging.selling_strategy}</p>
-                  </div>
-                )}
-                {creator.scripts_messaging.flirting_style && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Flirting Style</p>
-                    <p className="text-sm">{creator.scripts_messaging.flirting_style}</p>
-                  </div>
-                )}
-                {creator.scripts_messaging.high_converting_phrases && creator.scripts_messaging.high_converting_phrases.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">High-Converting Phrases</p>
-                    <ul className="list-disc list-inside text-sm space-y-1">
-                      {creator.scripts_messaging.high_converting_phrases.map((phrase, idx) => (
-                        <li key={idx}>{phrase}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Content Preferences */}
-          {creator.content_preferences && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Content Preferences</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {creator.content_preferences.posting_frequency && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Posting Frequency</p>
-                    <p className="text-sm">{creator.content_preferences.posting_frequency}</p>
-                  </div>
-                )}
-                {creator.content_preferences.content_energy_level && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Energy Level</p>
-                    <p className="text-sm">{creator.content_preferences.content_energy_level}</p>
-                  </div>
-                )}
-                {creator.content_preferences.preferred_content_types && creator.content_preferences.preferred_content_types.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Preferred Content Types</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.content_preferences.preferred_content_types.map((type, idx) => (
-                        <Badge key={idx} variant="outline">{type}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Menu Items */}
-          {creator.menu_items && creator.menu_items.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Menu Items</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {creator.menu_items.map((item, idx) => (
-                  <div key={idx} className="p-3 border rounded-lg">
-                    <div className="flex justify-between items-start mb-1">
-                      <p className="font-medium">{item.title}</p>
-                      <Badge>${item.price}</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Boundaries */}
-          {creator.boundaries && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Boundaries & Comfort Levels</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {creator.boundaries.hard_limits && creator.boundaries.hard_limits.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Hard Limits</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.boundaries.hard_limits.map((limit, idx) => (
-                        <Badge key={idx} variant="destructive">{limit}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {creator.boundaries.creative_comfort_zones && creator.boundaries.creative_comfort_zones.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Comfort Zones</p>
-                    <div className="flex flex-wrap gap-2">
-                      {creator.boundaries.creative_comfort_zones.map((zone, idx) => (
-                        <Badge key={idx} variant="secondary">{zone}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* OF Strategy */}
-          {creator.of_strategy && (
-            <Card>
-              <CardHeader>
-                <CardTitle>OnlyFans Strategy</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {creator.of_strategy.niche && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Niche</p>
-                    <p className="text-sm">{creator.of_strategy.niche}</p>
-                  </div>
-                )}
-                {creator.of_strategy.target_audience && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Target Audience</p>
-                    <p className="text-sm">{creator.of_strategy.target_audience}</p>
-                  </div>
-                )}
-                {creator.of_strategy.engagement_strategy && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Engagement Strategy</p>
-                    <p className="text-sm">{creator.of_strategy.engagement_strategy}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
+      <div className="grid gap-6 md:grid-cols-2">
+        {renderSection(
+          "Persona & Brand Identity",
+          "User",
+          creator.step2_persona_brand,
+          "border-primary"
+        )}
+        {renderSection(
+          "Amsterdam Story",
+          "MapPin",
+          creator.step3_amsterdam_story,
+          "border-blue-500"
+        )}
+        {renderSection(
+          "Persona Tone",
+          "MessageSquare",
+          creator.step4_persona_tone,
+          "border-purple-500"
+        )}
+        {renderSection(
+          "Boundaries",
+          "Shield",
+          creator.step5_boundaries,
+          "border-red-500"
+        )}
+        {renderSection(
+          "Pricing Structure",
+          "DollarSign",
+          creator.step6_pricing,
+          "border-green-500"
+        )}
+        {renderSection(
+          "Messaging Templates",
+          "Mail",
+          creator.step7_messaging_templates,
+          "border-cyan-500"
+        )}
+        {renderSection(
+          "Platform & Content",
+          "Globe",
+          creator.step8_platform_content,
+          "border-indigo-500"
+        )}
+        {renderSection(
+          "Market Positioning",
+          "Target",
+          creator.step9_market_positioning,
+          "border-pink-500"
+        )}
+        {renderSection(
+          "Commitments",
+          "CheckCircle",
+          creator.step11_commitments,
+          "border-emerald-500"
+        )}
       </div>
     </div>
   );
