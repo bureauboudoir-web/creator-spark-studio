@@ -33,12 +33,41 @@ Deno.serve(async (req) => {
 
     // Check if mock mode is enabled
     if (settings?.mock_mode === true) {
-      console.log('Mock mode enabled - frontend will use mock data');
+      console.log('Mock mode enabled - returning mock creators');
+      const mockCreators = [
+        {
+          creator_id: 'mock-creator-1',
+          name: 'Luna Rose',
+          email: 'luna@example.com',
+          profile_photo_url: null,
+          creator_status: 'active',
+          onboarding_completion: 100,
+          onboarding_steps_completed: [2, 3, 4, 5, 6, 7, 8, 9, 11],
+        },
+        {
+          creator_id: 'mock-creator-2',
+          name: 'Sophia Belle',
+          email: 'sophia@example.com',
+          profile_photo_url: null,
+          creator_status: 'active',
+          onboarding_completion: 67,
+          onboarding_steps_completed: [2, 3, 4, 5, 6, 7],
+        },
+        {
+          creator_id: 'mock-creator-3',
+          name: 'Emma Grace',
+          email: 'emma@example.com',
+          profile_photo_url: null,
+          creator_status: 'pending',
+          onboarding_completion: 33,
+          onboarding_steps_completed: [2, 3, 4],
+        },
+      ];
       return new Response(
         JSON.stringify({
           success: true,
           useMock: true,
-          data: [],
+          data: mockCreators,
         }),
         { 
           status: 200,
