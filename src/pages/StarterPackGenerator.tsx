@@ -62,25 +62,62 @@ export default function StarterPackGenerator() {
 
     setIsGenerating(true);
     try {
+      // Build creatorProfile object matching edge function expectations
+      const creatorProfile = {
+        name: creatorData.name,
+        full_name: creatorData.name,
+        personal_info: {
+          name: creatorData.name,
+          location: creatorData.step3_amsterdam_story?.neighborhood || 'Unknown',
+        },
+        persona: {
+          character_identity: creatorData.step2_persona_brand?.persona_name,
+          tone_of_voice: creatorData.step4_persona_tone?.persona_tone,
+          personality_traits: creatorData.step2_persona_brand?.brand_values,
+          mood_energy: creatorData.step4_persona_tone?.emoji_style,
+          audience_impression_goals: creatorData.step9_market_positioning?.differentiators,
+          emotional_style: creatorData.step4_persona_tone?.persona_tone,
+          niche: creatorData.step9_market_positioning?.target_audience,
+          brand_keywords: creatorData.step2_persona_brand?.brand_values,
+          key_traits: creatorData.step2_persona_brand?.brand_values,
+        },
+        creator_story: {
+          brand_origin_story: creatorData.step3_amsterdam_story?.origin_story,
+        },
+        visual_identity: {
+          visual_vibe: creatorData.step2_persona_brand?.brand_tagline,
+        },
+        messaging: {
+          fan_relationship_style: creatorData.step7_messaging_templates?.welcome_message,
+          engagement_hooks: creatorData.step7_messaging_templates?.ppv_teasers,
+          storytelling_style: creatorData.step4_persona_tone?.persona_tone,
+        },
+        boundaries: {
+          acceptable_topic_boundaries: creatorData.step5_boundaries?.hard_limits,
+          content_comfort_zones: creatorData.step5_boundaries?.soft_limits,
+        },
+        pricing: {
+          menu_item_names: creatorData.step6_pricing?.tip_menu?.map(t => t.item),
+          offer_types: ['Custom content', 'Exclusive access'],
+          bundle_style: 'Premium packages',
+          value_statements: ['Exclusive', 'Personalized', 'Intimate'],
+        },
+        content_preferences: {
+          preferred_themes: creatorData.step9_market_positioning?.content_pillars,
+          preferred_atmosphere: 'Intimate and engaging',
+          audience_type: creatorData.step9_market_positioning?.target_audience,
+        },
+      };
+
       const { data, error } = await supabase.functions.invoke('generate-starter-pack', {
-        body: { 
-          creator_id: selectedCreatorId,
-          // Pass new 11-step data for generation
-          persona_tone: creatorData.step4_persona_tone,
-          messaging_templates: creatorData.step7_messaging_templates,
-          pricing: creatorData.step6_pricing,
-          amsterdam_story: creatorData.step3_amsterdam_story,
-          market_positioning: creatorData.step9_market_positioning,
-          persona_brand: creatorData.step2_persona_brand,
-          boundaries: creatorData.step5_boundaries,
-        }
+        body: { creatorProfile }
       });
 
       if (error) throw error;
 
       if (data?.success) {
-        setGeneratedContent(data.data.content);
-        setStarterPackId(data.data.starter_pack_id);
+        setGeneratedContent(data.content);
+        setStarterPackId(data.starter_pack_id);
         toast.success("Starter Pack generated successfully!");
       } else {
         throw new Error(data?.error || 'Generation failed');
@@ -132,7 +169,7 @@ export default function StarterPackGenerator() {
 
   const completionPercentage = creatorData?.onboarding_completion || 0;
   const stepsCompleted = creatorData?.onboarding_steps_completed || [];
-  const canGenerate = completionPercentage === 100 && !mockDataUsed;
+  const canGenerate = completionPercentage === 100;
 
   if (isLoading || !creatorData) {
     return (
@@ -283,10 +320,7 @@ export default function StarterPackGenerator() {
 
             {!canGenerate && (
               <p className="text-xs text-center text-muted-foreground mt-3">
-                {mockDataUsed 
-                  ? "Cannot generate in mock mode - connect to BB API first"
-                  : "Complete all 9 onboarding steps in BB before generating content"
-                }
+                Complete all onboarding steps before generating content
               </p>
             )}
           </CardContent>

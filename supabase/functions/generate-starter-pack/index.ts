@@ -31,11 +31,15 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        conversation_starters: conversationStarters,
-        video_scripts: videoScripts,
-        captions: captions,
-        story_teasers: storyTeasers,
-        menu_upsell: menuUpsell,
+        success: true,
+        starter_pack_id: crypto.randomUUID(),
+        content: {
+          conversation_starters: conversationStarters,
+          video_scripts: videoScripts,
+          captions: captions,
+          story_teasers: storyTeasers,
+          menu_upsell: menuUpsell,
+        }
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
