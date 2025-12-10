@@ -11,47 +11,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get authenticated user from JWT (verified by Supabase)
-    const authHeader = req.headers.get('Authorization');
-    
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const supabaseClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
-
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-    
-    if (authError || !user) {
-      console.error('Auth error:', authError);
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Check if user has admin role using service role client
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: roleData, error: roleError } = await serviceClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
 
-    if (roleError || !roleData) {
-      console.error('Role check error:', roleError);
-      return new Response(JSON.stringify({ error: 'Forbidden - Admin access required' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Handle GET request - fetch settings
+    // Handle GET request - allow unauthenticated access to read mock_mode
+    // This is needed for the app to initialize before user logs in
     if (req.method === 'GET') {
       const { data, error } = await serviceClient
         .from('fastcast_content_settings')
@@ -77,6 +40,45 @@ Deno.serve(async (req) => {
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // For POST requests, require authentication and admin role
+    const authHeader = req.headers.get('Authorization');
+    
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check if user has admin role
+    const { data: roleData, error: roleError } = await serviceClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .single();
+
+    if (roleError || !roleData) {
+      console.error('Role check error:', roleError);
+      return new Response(JSON.stringify({ error: 'Forbidden - Admin access required' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Handle POST request - update settings
