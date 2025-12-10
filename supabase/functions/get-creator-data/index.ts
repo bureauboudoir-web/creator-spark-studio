@@ -4,6 +4,111 @@ import { corsHeaders } from '../_shared/cors.ts';
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+// Mock creator data for testing
+const getMockCreatorData = (creatorId: string) => ({
+  creator_id: creatorId,
+  name: 'Demo Creator',
+  email: 'demo@example.com',
+  profile_photo_url: null,
+  creator_status: 'active',
+  
+  // New 11-step structure mock data
+  step2_persona_brand: {
+    display_name: 'Luna Rose',
+    persona_name: 'Luna',
+    brand_tagline: 'Your Amsterdam dream girl',
+    brand_values: ['authentic', 'playful', 'sensual'],
+    personality_summary: 'Playful, flirty, and down-to-earth with a hint of mystery',
+    unique_selling_points: ['Bilingual content', 'Custom requests', 'Daily updates'],
+  },
+  step3_amsterdam_story: {
+    origin_story: 'Moved to Amsterdam 3 years ago from Barcelona',
+    why_amsterdam: 'Fell in love with the canals and the freedom',
+    neighborhood: 'Jordaan',
+    city_connection: 'The artistic vibe matches my creative soul',
+    local_favorites: ['Vondelpark sunsets', 'Canal boat rides', 'De Pijp market'],
+  },
+  step4_persona_tone: {
+    persona_tone: 'Flirty and warm with playful teasing',
+    persona_keywords: ['babe', 'sweetie', 'love'],
+    emoji_style: 'moderate',
+    like_words: ['amazing', 'gorgeous', 'sweetie'],
+    dislike_words: ['daddy', 'slave', 'master'],
+  },
+  step5_boundaries: {
+    hard_limits: ['No face reveals', 'No real location sharing', 'No meetups'],
+    soft_limits: ['Fetish content requires discussion', 'Extreme requests need approval'],
+    dont_discuss: ['Politics', 'Religion', 'Personal relationships'],
+  },
+  step6_pricing: {
+    subscription_price: 9.99,
+    ppv_range: { min: 5, max: 50 },
+    custom_content_pricing: { photo_set: 25, video_custom: 75, voice_note: 15 },
+    tip_menu: [
+      { item: 'Good morning message', price: 5 },
+      { item: 'Name in bio for a day', price: 20 },
+      { item: 'Custom photo', price: 30 },
+    ],
+    bundles: [
+      { name: 'Starter Pack', items: ['10 photos', '2 videos'], price: 25 },
+      { name: 'Premium Bundle', items: ['25 photos', '5 videos', 'Voice note'], price: 50 },
+    ],
+  },
+  step7_messaging_templates: {
+    welcome_message: 'Hey babe! 💕 So happy you joined! Tell me a bit about yourself...',
+    mass_dm_templates: [
+      'Good morning sunshine! ☀️ Ready to start your day right?',
+      'Missing you... 💋 Check your DMs for something special',
+    ],
+    upsell_scripts: [
+      'I made something special just for you... want to see? 😏',
+      'This one is too hot for the feed... DM me if you want it',
+    ],
+    ppv_teasers: [
+      'A little preview of what I was up to last night... 🔥',
+      'My new video just dropped and it is SPICY',
+    ],
+    re_engagement_messages: [
+      'Hey stranger! I missed you 💕 Where have you been?',
+      'I posted something I think you would LOVE... come back and see!',
+    ],
+  },
+  step8_platform_content: {
+    platform_links: {
+      onlyfans: 'https://onlyfans.com/lunarose',
+      instagram: '@lunarose.official',
+      twitter: '@lunarose_x',
+    },
+    content_preferences: {
+      preferred_types: ['Photos', 'Short videos', 'Stories'],
+      banned_types: ['Extreme fetish', 'B/G content'],
+      posting_frequency: 'Daily',
+      posting_times: ['9am', '3pm', '9pm'],
+    },
+    lifestyle: {
+      hobbies: ['Yoga', 'Photography', 'Cooking'],
+      interests: ['Travel', 'Fashion', 'Art'],
+      daily_routine: 'Morning yoga, afternoon shoots, evening engagement',
+    },
+  },
+  step9_market_positioning: {
+    niche: 'Girlfriend Experience',
+    target_audience: 'Men 25-45 seeking authentic connection',
+    competitors: ['Similar GFE creators'],
+    differentiators: ['Bilingual', 'Daily voice notes', 'Personalized content'],
+    content_pillars: ['Lifestyle glimpses', 'Flirty content', 'Behind the scenes'],
+  },
+  step11_commitments: {
+    agreed_terms: true,
+    content_guidelines_accepted: true,
+    payout_terms_accepted: true,
+    last_updated: new Date().toISOString(),
+  },
+  
+  onboarding_completion: 100,
+  onboarding_steps_completed: [2, 3, 4, 5, 6, 7, 8, 9, 11],
+});
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -62,12 +167,24 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch API settings from fastcast_content_settings
+    // Fetch API settings including mock_mode
     const { data: settings, error: settingsError } = await serviceClient
       .from('fastcast_content_settings')
-      .select('bb_api_url, bb_api_key')
+      .select('bb_api_url, bb_api_key, mock_mode')
       .limit(1)
       .single();
+
+    // Check if mock mode is enabled
+    if (settings?.mock_mode === true) {
+      console.log('Mock mode enabled - returning mock creator data');
+      return new Response(JSON.stringify({ 
+        success: true,
+        data: getMockCreatorData(creatorId),
+        useMock: true 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (settingsError || !settings || !settings.bb_api_url || !settings.bb_api_key) {
       console.error('Settings fetch error:', settingsError);
@@ -111,61 +228,40 @@ Deno.serve(async (req) => {
     const creatorData = await bbResponse.json();
     console.log('BB API response received for creator:', creatorId);
 
-    // Calculate onboarding completion for all 16 sections
-    const sectionsCompleted: string[] = [];
+    // Calculate onboarding completion for new 11-step structure
+    const stepsCompleted: number[] = [];
     
-    if (creatorData.personal_information && Object.keys(creatorData.personal_information).length > 0) {
-      sectionsCompleted.push('personal_information');
+    if (creatorData.step2_persona_brand && Object.keys(creatorData.step2_persona_brand).length > 0) {
+      stepsCompleted.push(2);
     }
-    if (creatorData.physical_description && Object.keys(creatorData.physical_description).length > 0) {
-      sectionsCompleted.push('physical_description');
+    if (creatorData.step3_amsterdam_story && Object.keys(creatorData.step3_amsterdam_story).length > 0) {
+      stepsCompleted.push(3);
     }
-    if (creatorData.amsterdam_story && Object.keys(creatorData.amsterdam_story).length > 0) {
-      sectionsCompleted.push('amsterdam_story');
+    if (creatorData.step4_persona_tone && Object.keys(creatorData.step4_persona_tone).length > 0) {
+      stepsCompleted.push(4);
     }
-    if (creatorData.boundaries && Object.keys(creatorData.boundaries).length > 0) {
-      sectionsCompleted.push('boundaries');
+    if (creatorData.step5_boundaries && Object.keys(creatorData.step5_boundaries).length > 0) {
+      stepsCompleted.push(5);
     }
-    if (creatorData.pricing_structure && Object.keys(creatorData.pricing_structure).length > 0) {
-      sectionsCompleted.push('pricing_structure');
+    if (creatorData.step6_pricing && Object.keys(creatorData.step6_pricing).length > 0) {
+      stepsCompleted.push(6);
     }
-    if (creatorData.persona_character && Object.keys(creatorData.persona_character).length > 0) {
-      sectionsCompleted.push('persona_character');
+    if (creatorData.step7_messaging_templates && Object.keys(creatorData.step7_messaging_templates).length > 0) {
+      stepsCompleted.push(7);
     }
-    if (creatorData.scripts_messaging && Object.keys(creatorData.scripts_messaging).length > 0) {
-      sectionsCompleted.push('scripts_messaging');
+    if (creatorData.step8_platform_content && Object.keys(creatorData.step8_platform_content).length > 0) {
+      stepsCompleted.push(8);
     }
-    if (creatorData.content_preferences && Object.keys(creatorData.content_preferences).length > 0) {
-      sectionsCompleted.push('content_preferences');
+    if (creatorData.step9_market_positioning && Object.keys(creatorData.step9_market_positioning).length > 0) {
+      stepsCompleted.push(9);
     }
-    if (creatorData.visual_identity && Object.keys(creatorData.visual_identity).length > 0) {
-      sectionsCompleted.push('visual_identity');
-    }
-    if (creatorData.creator_story && Object.keys(creatorData.creator_story).length > 0) {
-      sectionsCompleted.push('creator_story');
-    }
-    if (creatorData.menu_items && creatorData.menu_items.length > 0) {
-      sectionsCompleted.push('menu_items');
-    }
-    if (creatorData.bundles && creatorData.bundles.length > 0) {
-      sectionsCompleted.push('bundles');
-    }
-    if (creatorData.loyal_fan_offers && creatorData.loyal_fan_offers.length > 0) {
-      sectionsCompleted.push('loyal_fan_offers');
-    }
-    if (creatorData.voice_preferences && Object.keys(creatorData.voice_preferences).length > 0) {
-      sectionsCompleted.push('voice_preferences');
-    }
-    if (creatorData.media_uploads && Object.keys(creatorData.media_uploads).length > 0) {
-      sectionsCompleted.push('media_uploads');
-    }
-    if (creatorData.of_strategy && Object.keys(creatorData.of_strategy).length > 0) {
-      sectionsCompleted.push('of_strategy');
+    if (creatorData.step11_commitments && Object.keys(creatorData.step11_commitments).length > 0) {
+      stepsCompleted.push(11);
     }
 
-    const onboardingCompletion = Math.round((sectionsCompleted.length / 16) * 100);
+    const onboardingCompletion = Math.round((stepsCompleted.length / 9) * 100);
 
-    // Build the response with all 16 BB onboarding sections
+    // Build the response with new 11-step structure
     const fullCreatorData = {
       creator_id: creatorData.creator_id || creatorId,
       name: creatorData.name,
@@ -173,27 +269,20 @@ Deno.serve(async (req) => {
       profile_photo_url: creatorData.profile_photo_url || null,
       creator_status: creatorData.creator_status || 'active',
       
-      // All 16 sections - pass through exactly as stored
-      personal_information: creatorData.personal_information || null,
-      physical_description: creatorData.physical_description || null,
-      amsterdam_story: creatorData.amsterdam_story || null,
-      boundaries: creatorData.boundaries || null,
-      pricing_structure: creatorData.pricing_structure || null,
-      persona_character: creatorData.persona_character || null,
-      scripts_messaging: creatorData.scripts_messaging || null,
-      content_preferences: creatorData.content_preferences || null,
-      visual_identity: creatorData.visual_identity || null,
-      creator_story: creatorData.creator_story || null,
-      menu_items: creatorData.menu_items || [],
-      bundles: creatorData.bundles || [],
-      loyal_fan_offers: creatorData.loyal_fan_offers || [],
-      voice_preferences: creatorData.voice_preferences || null,
-      media_uploads: creatorData.media_uploads || null,
-      of_strategy: creatorData.of_strategy || null,
+      // New 11-step structure - pass through exactly as stored
+      step2_persona_brand: creatorData.step2_persona_brand || null,
+      step3_amsterdam_story: creatorData.step3_amsterdam_story || null,
+      step4_persona_tone: creatorData.step4_persona_tone || null,
+      step5_boundaries: creatorData.step5_boundaries || null,
+      step6_pricing: creatorData.step6_pricing || null,
+      step7_messaging_templates: creatorData.step7_messaging_templates || null,
+      step8_platform_content: creatorData.step8_platform_content || null,
+      step9_market_positioning: creatorData.step9_market_positioning || null,
+      step11_commitments: creatorData.step11_commitments || null,
       
       // Metadata
       onboarding_completion: onboardingCompletion,
-      onboarding_sections_completed: sectionsCompleted,
+      onboarding_steps_completed: stepsCompleted,
     };
 
     return new Response(JSON.stringify({ 
